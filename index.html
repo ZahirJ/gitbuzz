@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GitBuzz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one working column — song picker, transport + chord strip, full-width fretboard, then controls/color side by side, missions below */
+:root{
+  --bg:#ECEEF2; --surface:#FFFFFF; --surface-2:#F5F6F9; --ink:#1A2030; --muted:#5B6476; --line:#D5D9E2;
+  --accent:#2C55C9; --accent-ink:#FFFFFF;
+  --wood:#2A201C; --wood-2:#33271F; --fret:#B7B0A3; --string:#D8CFBF; --inlay:#5C4B40; --nut:#E9E2D2;
+  --root:#E5533B; --chord:#F0B03A; --special:#D9407A; --scale:#E2E7EF; --scale-ink:#1A2030; --color:#4CC3E6;
+  --font-display:"Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --font-body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#11141B; --surface:#191E28; --surface-2:#1F2532; --ink:#E6E9F0; --muted:#9AA3B6; --line:#2C3443;
+  --accent:#7FA0FF; --accent-ink:#0E1220; --scale:#C9D2E0; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#11141B; --surface:#191E28; --surface-2:#1F2532; --ink:#E6E9F0; --muted:#9AA3B6; --line:#2C3443;
+  --accent:#7FA0FF; --accent-ink:#0E1220; --scale:#C9D2E0; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:18px}
+h1,h2,h3{text-wrap:balance;margin:0}
+h1{font-family:var(--font-display);font-weight:800;font-size:clamp(34px,6vw,52px);letter-spacing:.01em;line-height:1;text-transform:uppercase}
+h2{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:.03em;text-transform:uppercase}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+p{margin:0}
+.muted{color:var(--muted)}
+.mono{font-family:var(--font-mono)}
+header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
+header .sub{max-width:60ch;color:var(--muted)}
+
+/* song picker */
+.songs{display:flex;gap:10px;flex-wrap:wrap}
+.song{flex:1 1 220px;min-width:0;text-align:start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;color:var(--ink);font:inherit;display:grid;gap:2px}
+.song:hover{border-color:var(--accent)}
+.song[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.song .t{font-weight:700;font-size:16px}
+.song .a{color:var(--muted);font-size:13px}
+.song .k{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
+.song.add{border-style:dashed;align-content:center;color:var(--muted)}
+
+/* panel */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.spread{justify-content:space-between}
+
+/* buttons / segmented */
+button{font:inherit}
+.btn{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:focus-visible,.song:focus-visible,.chip:focus-visible,.seg button:focus-visible,.colorbtn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface-2)}
+.seg button{border:0;background:transparent;color:var(--ink);padding:6px 11px;cursor:pointer;font-size:13px;font-weight:600}
+.seg button+button{border-inline-start:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.ctl{display:grid;gap:6px}
+.ctl > label,.ctl > .lab{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* transport */
+.transport{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.play{width:52px;height:52px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);cursor:pointer;display:grid;place-items:center;flex:none}
+.play svg{width:20px;height:20px;fill:currentColor}
+.tempo{display:flex;align-items:center;gap:8px}
+.tempo input{width:150px}
+.bpm{font-family:var(--font-mono);font-weight:700;min-width:3.2ch;display:inline-block;text-align:end}
+.now{display:flex;align-items:baseline;gap:12px;margin-inline-start:auto}
+.now .cur{font-family:var(--font-display);font-weight:800;font-size:44px;line-height:1}
+.now .nxt{color:var(--muted);font-size:14px}
+.beats{display:flex;gap:5px}
+.beats i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.beats i.on{background:var(--accent)}
+
+.strip{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer;font-family:var(--font-mono);font-weight:700;font-size:14px;display:grid;justify-items:start;gap:0}
+.chip small{font-family:var(--font-body);font-weight:500;font-size:11px;color:var(--muted)}
+.chip[aria-current="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chip[aria-current="true"] small{color:inherit;opacity:.8}
+
+/* fretboard */
+.board-wrap{overflow-x:auto;border-radius:10px;background:var(--wood)}
+.board-wrap svg{display:block;min-width:780px;width:100%;height:auto}
+.dot{cursor:pointer}
+.dot:hover circle.body{stroke:var(--ink);stroke-width:2}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:50%;display:inline-block;border:1px solid var(--line)}
+.tab{font-family:var(--font-mono);font-size:13px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:pre;margin:0;line-height:1.35}
+
+.cols{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+@media (max-width:860px){.cols{grid-template-columns:1fr}.now{margin-inline-start:0}}
+.ctls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+
+.tones{display:flex;gap:6px;flex-wrap:wrap}
+.tone{font-family:var(--font-mono);font-weight:700;font-size:13px;border-radius:999px;padding:3px 10px;color:#1A2030}
+.colorlist{display:grid;gap:6px}
+.colorbtn{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;text-align:start;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:8px;padding:8px 10px;cursor:pointer}
+.colorbtn[aria-pressed="true"]{border-color:var(--color);box-shadow:inset 0 0 0 1px var(--color)}
+.colorbtn .nm{font-family:var(--font-mono);font-weight:700}
+.colorbtn .ad{font-size:13px;color:var(--muted)}
+.pill{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:2px 8px;border:1px solid var(--line);white-space:nowrap}
+.pill.in{color:var(--accent);border-color:var(--accent)}
+.pill.out{color:var(--special);border-color:var(--special)}
+
+.missions{display:grid;gap:10px;counter-reset:m}
+.mission{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.mission input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent)}
+.mission h3{font-size:15px;font-weight:700}
+.mission p{color:var(--muted);font-size:14px;max-width:70ch}
+.mission.done h3{text-decoration:line-through;text-decoration-color:var(--muted)}
+.progress{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.progress b{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.links a{color:var(--accent);font-weight:600;text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:14px}
+.links a:hover{border-color:var(--accent)}
+
+.guide-intro{max-width:72ch;color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px}
+.step{display:grid;gap:8px;align-content:start;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);min-width:0}
+.step-head{display:flex;gap:10px;align-items:baseline}
+.step-num{font-family:var(--font-display);font-weight:800;font-size:28px;line-height:1;color:var(--accent);min-width:1.1ch}
+.step h3{font-size:16px;font-weight:700}
+.step p,.step li{font-size:14px;color:var(--muted)}
+.step ul{margin:0;padding-inline-start:18px;display:grid;gap:3px}
+.step strong{color:var(--ink);font-weight:600}
+.step .tab{font-size:12px}
+.step .btn{justify-self:start;font-size:13px;padding:5px 10px}
+.mins{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-inline-start:auto;white-space:nowrap}
+.licks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:12px}
+.lick{display:grid;gap:8px;align-content:start;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);min-width:0}
+.lick.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.lick h3{font-size:16px;font-weight:700}
+.lick .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.lick .prog{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--ink)}
+.lick p{font-size:14px;color:var(--muted)}
+.lick .tab{font-size:12px}
+.lick .row .btn{font-size:13px;padding:5px 10px}
+.lvl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:2px 8px;border:1px solid var(--line);color:var(--muted)}
+.lvl.l1{color:var(--accent);border-color:var(--accent)}
+.lvl.l3{color:var(--special);border-color:var(--special)}
+.lick-now{display:grid;gap:8px;padding:10px 12px;border:1px solid var(--accent);border-radius:10px;background:var(--surface-2)}
+.lick-now .row strong{font-size:15px}
+.key-tech{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 14px}
+.key-tech b{font-family:var(--font-mono);color:var(--ink)}
+.lost{border-inline-start:3px solid var(--special);padding:10px 14px;background:var(--surface-2);border-radius:0 8px 8px 0;display:grid;gap:4px}
+.lost p{font-size:14px;color:var(--muted);max-width:75ch}
+form{display:grid;gap:12px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+input[type=text],select,textarea{font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+textarea{font-family:var(--font-mono);font-size:14px;min-height:44px;resize:vertical}
+.err{color:var(--special);font-size:14px}
+.note{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div style="display:grid;gap:6px">
+      <span class="eyebrow">Solo practice over songs you know</span>
+      <h1>GitBuzz</h1>
+    </div>
+    <p class="sub">Pick a song, press play, and solo over the loop. The board shows which notes fit, which notes land on the chord you're hearing, and which notes add color.</p>
+  </header>
+
+  <div class="songs" id="songs" role="group" aria-label="Songs"></div>
+
+  <section class="panel" aria-label="Player">
+    <div class="transport">
+      <button class="play" id="play" aria-label="Play loop"></button>
+      <div class="ctl">
+        <span class="lab">Section</span>
+        <div class="seg" id="sections"></div>
+      </div>
+      <div class="ctl">
+        <label for="tempo">Tempo</label>
+        <div class="tempo"><input type="range" id="tempo" min="50" max="180" step="1"><span class="bpm" id="bpm"></span><span class="muted" style="font-size:13px">bpm</span></div>
+      </div>
+      <div class="now" aria-live="polite">
+        <div style="display:grid;gap:6px">
+          <span class="cur mono" id="cur"></span>
+          <div class="beats" id="beats"><i></i><i></i><i></i><i></i></div>
+        </div>
+        <span class="nxt" id="nxt"></span>
+      </div>
+    </div>
+    <div class="strip" id="strip" role="group" aria-label="Chords in this section"></div>
+    <p class="note" id="tempoNote"></p>
+  </section>
+
+  <section class="panel" aria-label="Fretboard">
+    <div class="row spread">
+      <h2 id="boardTitle">Fretboard</h2>
+      <span class="muted mono" id="keyInfo" style="font-size:13px"></span>
+    </div>
+    <div class="lick-now" id="lickNow" hidden>
+      <div class="row spread"><strong id="lickNowName"></strong>
+        <div class="row"><button class="btn" type="button" id="lickReplay">Play again</button><button class="btn" type="button" id="lickClear">Back to scale view</button></div></div>
+      <pre class="tab" id="lickNowTab"></pre>
+    </div>
+    <div class="board-wrap"><svg id="board" viewBox="0 0 1100 262" role="img" aria-label="Guitar fretboard, high E string on top like a tab"></svg></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--root)"></i>Chord root</span>
+      <span><i class="sw" style="background:var(--chord)"></i>Other chord notes: safe landing spots</span>
+      <span><i class="sw" style="background:var(--special)"></i>Chord note outside the pentatonic: the "special" note</span>
+      <span><i class="sw" style="background:var(--scale)"></i>Scale notes: free to play</span>
+      <span><i class="sw" style="background:var(--color)"></i>Selected color note</span>
+    </div>
+    <p class="note">The board reads like a tab: thin high E string on top, thick low E at the bottom. Tap any dot to hear it. Dots with a thick red ring are the home note.</p>
+  </section>
+
+  <section class="panel" id="guide" aria-label="How to solo with the box">
+    <div class="row spread">
+      <h2 id="guideTitle">How to solo with the box</h2>
+      <span class="muted" style="font-size:14px">About 25 minutes, done in order</span>
+    </div>
+    <p class="guide-intro" id="guideIntro"></p>
+    <div class="steps" id="steps"></div>
+    <div class="lost">
+      <strong>If you get lost while the song plays</strong>
+      <p>Don't stop. Let a bar go by, find the nearest red-ringed home note, and start a new short phrase from it. If a note sounds wrong, slide it one fret up or down; one of the two will fit. No note in the box is ever far from a good one.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="licks" aria-label="Solo licks">
+    <div class="row spread">
+      <h2 id="licksTitle">Licks</h2>
+      <span class="muted" style="font-size:14px">Plays at the tempo slider, after a 1-bar count-in</span>
+    </div>
+    <p class="guide-intro">These are original licks made from Box 1 for this song's chords. Press Play to hear a lick over its chords. The board lights each note as it plays, numbered in order. Learn it slowly, then change one note or the rhythm so it becomes yours.</p>
+    <div class="key-tech"><span><b>7h9</b> hammer-on: pick 7, then press 9 without picking</span><span><b>9b</b> bend the string up a whole step (2 frets of pitch)</span><span><b>7/9</b> slide from 7 to 9</span><span><b>9~</b> vibrato</span><span><b>·2</b> in the beats row: rest for 2 beats</span></div>
+    <div class="licks" id="lickList"></div>
+  </section>
+
+  <div class="cols">
+    <section class="panel" aria-label="What to show">
+      <h2>What to show</h2>
+      <div class="ctls">
+        <div class="ctl">
+          <span class="lab">Scale</span>
+          <div class="seg" id="scaleSeg">
+            <button data-v="pent">Pentatonic (5 notes)</button>
+            <button data-v="full">Full scale (7)</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <span class="lab">Labels</span>
+          <div class="seg" id="labelSeg">
+            <button data-v="notes">Notes</button>
+            <button data-v="intervals">Intervals</button>
+            <button data-v="none">None</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <span class="lab">Chord notes</span>
+          <div class="seg" id="followSeg">
+            <button data-v="on">Follow chord</button>
+            <button data-v="off">Scale only</button>
+          </div>
+        </div>
+      </div>
+      <div class="ctl">
+        <span class="lab">Position (box)</span>
+        <div class="seg" id="boxSeg" style="flex-wrap:wrap"></div>
+      </div>
+      <p class="note">A box is one hand position, about 4–5 frets wide, with 2 notes per string. Learn Box 1 first, then connect it to its neighbours until the whole neck joins up.</p>
+      <div class="ctl" id="tabBlock">
+        <span class="lab" id="tabLabel">This box as tab (play it up and back down)</span>
+        <pre class="tab" id="tab"></pre>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Color for this chord">
+      <div class="row spread">
+        <h2>Color for <span class="mono" id="colorChord"></span></h2>
+      </div>
+      <div class="ctl">
+        <span class="lab">Notes in this chord</span>
+        <div class="tones" id="chordTones"></div>
+      </div>
+      <p class="note" id="specialNote"></p>
+      <div class="ctl">
+        <span class="lab">Add one note to the chord</span>
+        <div class="colorlist" id="colorList"></div>
+      </div>
+      <p class="note">Tap a color to see that note on the board. Try it two ways: add it to the chord you strum, and land on it at the end of a solo phrase.</p>
+    </section>
+  </div>
+
+  <section class="panel" aria-label="Missions">
+    <div class="row spread">
+      <h2 id="missionTitle">Missions</h2>
+      <span class="muted" id="missionCount" style="font-size:14px"></span>
+    </div>
+    <div class="progress"><b id="missionBar"></b></div>
+    <div class="missions" id="missions"></div>
+    <div class="links" id="links"></div>
+  </section>
+
+  <section class="panel" aria-label="Add a song">
+    <h2>Add a song from your tabs</h2>
+    <p class="muted" style="max-width:70ch">Copy the chords from a song in your Ultimate Guitar list and paste them here. Each chord is one bar of 4 beats. Write <span class="mono">C:2</span> for a 2-beat chord. Lyrics and bar lines are ignored.</p>
+    <form id="addForm" novalidate>
+      <div class="fgrid">
+        <div class="ctl"><label for="fName">Song name</label><input type="text" id="fName" dir="auto" placeholder="Wonderwall"></div>
+        <div class="ctl"><label for="fArtist">Artist</label><input type="text" id="fArtist" dir="auto" placeholder="Oasis"></div>
+        <div class="ctl"><label for="fRoot">Key</label><select id="fRoot"></select></div>
+        <div class="ctl"><label for="fMode">Key type</label>
+          <select id="fMode"><option value="major">Major</option><option value="minor">Minor</option><option value="dorian">Minor, Dorian (bluesy rock)</option></select></div>
+      </div>
+      <div class="ctl"><label for="fVerse">Verse chords</label><textarea id="fVerse" placeholder="Em7 G Dsus4 A7sus4"></textarea></div>
+      <div class="ctl"><label for="fChorus">Chorus chords (optional)</label><textarea id="fChorus" placeholder="C D Em"></textarea></div>
+      <p class="note">Not sure of the key? It is usually the first or last chord of the song. If the board looks wrong, try the relative key: a major key and the minor key 3 frets below it share the same notes (C major and A minor, D major and B minor).</p>
+      <div class="row"><button class="btn primary" type="submit">Add song</button><span class="err" id="fErr" role="alert"></span></div>
+    </form>
+  </section>
+</div>
+
+<script>
+(function(){
+const SHARP=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const MIXED=['C','C#','D','Eb','E','F','F#','G','G#','A','Bb','B'];
+const IVL=['R','b2','2','b3','3','4','b5','5','b6','6','b7','7'];
+const SCALES={major:[0,2,4,5,7,9,11],minor:[0,2,3,5,7,8,10],dorian:[0,2,3,5,7,9,10]};
+const OPEN=[40,45,50,55,59,64]; // low E .. high e
+const FRETS=15;
+const LETTER={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+const TAB='https://www.tab4u.com/tabs/songs/1886_%D7%9E%D7%95%D7%A0%D7%99%D7%A7%D7%94_%D7%A1%D7%A7%D7%A1_-_%D7%9E%D7%9B%D7%94_%D7%90%D7%A4%D7%95%D7%A8%D7%94.html';
+
+const BUILTIN=[
+ {id:'maka',name:'מכה אפורה',artist:'מוניקה סקס',tonic:2,mode:'major',bpm:136,
+  tempoNote:'136 bpm and the verse order (D, G, A/F#, Bm, one bar each) were measured from your recording, the live Galgalatz studio version. Tuning is standard. The chorus order is from Tab4U. Slow it to 90–100 bpm while you learn.',
+  sections:{Verse:[['D',4],['G',4],['A/F#',4],['Bm',4]],Chorus:[['Em',4],['A',4],['Bm',4],['G',4],['Em',4],['A',4],['D',4],['G',4]],Interlude:[['Bm',4],['A',4],['G',4],['A/F#',4]]},
+  links:[['Chords on Tab4U',TAB],['Find on Spotify','https://open.spotify.com/search/'+encodeURIComponent('מוניקה סקס מכה אפורה')],['Search Ultimate Guitar','https://www.ultimate-guitar.com/search.php?search_type=title&value='+encodeURIComponent('מכה אפורה')]],
+  missions:[
+   ['Find home: Box 1 at fret 7','Play the Verse loop and use only the dots in Box 1. Start each phrase on a D and end on one. Three notes per phrase is plenty at first.'],
+   ['Catch the chord change','Keep "Follow chord" on. Each time the loop reaches G, land on an amber or red dot. Get it 8 times in a row without looking at the strip.'],
+   ['Add the two missing notes','Switch to the full scale. The new notes are G and C#. Over the A chord, end a phrase on C#. It is the 3rd of A and sounds the sweetest there.'],
+   ['Leave the box','Pick Box 2 (fret 10) and repeat your best phrase there. Then play one phrase that starts in Box 1 and ends in Box 2.'],
+   ['Color your strumming','Strum the Chorus on your own guitar. On each chord, open the Color panel and try the add9 and sus4 versions. Pick the ones you like and keep them.']]},
+ {id:'sultans',name:'Sultans of Swing',artist:'Dire Straits',tonic:2,mode:'minor',bpm:149,
+  tempoNote:'149 bpm and the chord lengths were measured from your recording (the official video version). It plays about an eighth of a semitone sharp, so if you play along with it, tune your guitar up slightly to match. Slow it to 100–110 bpm while you learn.',
+  sections:{Verse:[['Dm',4],['C',2],['Bb',2],['A',8]],Chorus:[['F',8],['C',8],['Bb',8],['Dm',8]],Interlude:[['Dm',2],['C',2],['Bb',2],['C',2]]},
+  links:[['Find on Spotify','https://open.spotify.com/search/'+encodeURIComponent('Dire Straits Sultans of Swing')],['Search Ultimate Guitar','https://www.ultimate-guitar.com/search.php?search_type=title&value='+encodeURIComponent('Sultans of Swing')]],
+  missions:[
+   ['Home box: D minor at fret 10','Loop the Verse with Box 1 only. Listen to how the chords step down: Dm, C, Bb, A. Let your phrases step down with them.'],
+   ['The A chord needs a C#','With "Follow chord" on, the pink dot over A is C#. It is the one note outside the D minor scale. Hit it on the A, then resolve to D when Dm comes back.'],
+   ['Chorus targets','In the Chorus, land on the 3rd of each chord: A over F, E over C, D over Bb, F over Dm. Switch labels to Intervals and look for the "3" or "b3".'],
+   ['Connect two boxes','Try Box 5 at fret 8, just below Box 1. Play one phrase that starts in Box 1 and finishes in Box 5.'],
+   ['Add color','Try Dm add9 and Bb maj7 from the Color panel, in your strumming and as the last note of a phrase.']]},
+ {id:'money',name:'Money for Nothing',artist:'Dire Straits',tonic:7,mode:'dorian',bpm:135,
+  tempoNote:'135 bpm comes from a published lesson sheet (Guitar Alliance). Chord lengths are simplified.',
+  sections:{Verse:[['Gm7',4],['C',4],['Gm7',4],['Bb',2],['C',2],['Gm7',4],['Gm7',4],['F',2],['Gm7',2]],Chorus:[['Eb',4],['Bb',4],['Eb',4],['F',4],['Gm',4],['C',4],['D',2],['E',2]]},
+  links:[['Find on Spotify','https://open.spotify.com/search/'+encodeURIComponent('Dire Straits Money for Nothing')],['Search Ultimate Guitar','https://www.ultimate-guitar.com/search.php?search_type=title&value='+encodeURIComponent('Money for Nothing')]],
+  missions:[
+   ['Home box: G minor at fret 3','Loop the Verse with Box 1. This is the classic rock box. Bend the C (3rd string, fret 5) up toward D.'],
+   ['The C chord wants an E','Over C, the pink dot is E. It is not in the minor pentatonic, but it is in G Dorian, the scale this verse uses. Land on it when the C arrives.'],
+   ['Hear the chorus shift','In the Chorus the Eb chord brings an Eb note. Play E over the verse’s C, then Eb over the chorus’s Eb, and listen to how the mood changes.'],
+   ['Boxes 1 and 2','Move to Box 2 at fret 6 and play the same lick there. Then slide between the two boxes on the G string.'],
+   ['Add color','Over Gm7, add the A (the 9th) from the Color panel. Over C, try the sus4 and add9.']]}
+];
+
+/* ---------- state ---------- */
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let custom=store.get('nn-songs',[]);
+let done=store.get('nn-missions',{});
+const S={song:store.get('nn-song','maka'),section:'Verse',idx:0,scale:'pent',box:1,follow:true,labels:'notes',colorIv:null,playing:false,bpm:null,home:false};
+
+/* string index: 0 = low E ... 5 = high e */
+const GUIDE={
+ maka:{targets:[['D',3,7,'D'],['G',2,9,'B'],['A/F#',2,7,'A'],['Bm',2,9,'B']],
+  special:{chordIdx:2,note:'C#',pos:[5,9],text:'Over A/F#, play C# on the high e string at fret 9 instead of the A. It sits between the two box frets, so your middle finger reaches it. Then move to the B (D string, fret 9) when Bm arrives.'},
+  record:'Good places to solo in this song: the intro, the interlude (Bm A G A/F#), the D G D A section at the end, and the short gaps after each sung line.'},
+ sultans:{targets:[['Dm',3,10,'F'],['C',2,10,'C'],['Bb',2,12,'D'],['A',4,10,'A']],
+  special:{chordIdx:3,note:'C#',pos:[2,11],text:'Over the A chord, play C# on the D string at fret 11, between the box frets. When Dm comes back, move one fret up to D (fret 12). That one-fret step, C# to D, is the sound of this song.'},
+  record:'Play in the gaps after each sung line, the way Knopfler answers the vocal. Keep phrases short until the long solo at the end.'},
+ money:{targets:[['Gm7',2,5,'G'],['C',3,5,'C'],['Gm7',3,3,'Bb'],['Bb',4,3,'D'],['C',3,5,'C']],
+  special:{chordIdx:1,note:'E',pos:[4,5],text:'Over C, play E on the B string at fret 5. It is not in the pentatonic box, but it is in G Dorian, the scale this verse uses. Go back to G or Bb when Gm7 returns.'},
+  record:'Play in the gaps between sung lines in the verse. The chorus changes key feel (Eb, Bb), so stay quiet there at first and just listen.'}
+};
+/* licks: notes are [string 0=low E..5=high e, fret, beats, technique]; [null,null,beats] is a rest.
+   technique: h hammer-on, b whole-step bend, s slide from previous note, v vibrato */
+const LICKS={
+ maka:[
+  {name:'Falling home',lvl:1,where:'Verse, bars 1–2',chords:[['D',4],['G',4]],
+   notes:[[5,10,1],[5,7,1],[4,10,.5],[4,7,.5],[3,9,1],[3,7,4,'v']],
+   tip:'Start on the high D and walk down the box to the D on the G string, landing as the G chord arrives. D belongs to both chords, so it sounds settled.'},
+  {name:'Bend into Bm',lvl:2,where:'Verse, bars 3–4',chords:[['A/F#',4],['Bm',4]],
+   notes:[[2,7,.5],[2,9,.5],[3,7,1],[3,9,2,'b'],[2,9,4,'v']],
+   tip:'Bend with your ring finger, with the middle finger behind it pushing too. Bend E up to F#, the bass note of A/F#, then drop to B when Bm arrives.'},
+  {name:'The C# move',lvl:3,where:'Verse, bars 3–4',chords:[['A/F#',4],['Bm',4]],
+   notes:[[4,10,1],[5,7,.5],[5,9,2.5,'v'],[5,7,1],[4,10,.5],[4,7,2.5,'v']],
+   tip:'C# (high e, fret 9) is the note the box doesn’t have. Hold it over A/F# so you hear it pull, then fall back into the box on Bm and land on F#.'},
+  {name:'Chorus answer',lvl:1,where:'Chorus, bars 1–2',chords:[['Em',4],['A',4]],
+   notes:[[3,7,.5],[3,9,1.5,'h'],[2,9,2],[2,7,4,'v']],
+   tip:'Pick the D, then hammer onto E without picking again. E belongs to Em, and the A at the end belongs to the A chord. Play it in the gap after a sung line.'}],
+ sultans:[
+  {name:'Walk down with the chords',lvl:1,where:'Verse',chords:[['Dm',4],['C',2],['Bb',2],['A',8]],
+   notes:[[5,13,1],[5,10,1],[4,13,1],[4,10,1],[3,12,2],[3,10,2],[1,12,4,'v'],[null,null,4]],
+   tip:'Each note steps down as the chords step down. G sits in the C chord, F sits in Bb, and A is the root of the A chord.'},
+  {name:'C# to D',lvl:2,where:'Verse, A → Dm',chords:[['A',8],['Dm',4]],
+   notes:[[1,12,1],[2,11,3,'v'],[null,null,2],[1,12,1],[2,11,1],[2,12,4,'h']],
+   tip:'Fret 11 on the D string sits between the box frets, so use your middle finger. Hold the C# over A, then hammer up one fret to D as Dm comes back. This is the sound of the song.'},
+  {name:'Chorus phrase',lvl:1,where:'Chorus, F → C',chords:[['F',8],['C',8]],
+   notes:[[4,10,2],[4,13,2,'v'],[null,null,4],[3,12,.5],[3,10,.5],[2,12,1],[2,10,2,'v'],[null,null,4]],
+   tip:'A and C are both in the F chord. Over C, walk down G, F, D and land on C, its root. Each phrase leaves a full bar of rest.'},
+  {name:'Bend to D',lvl:3,where:'Chorus, Bb → Dm',chords:[['Bb',8],['Dm',8]],
+   notes:[[3,12,1],[3,10,3,'v'],[null,null,4],[4,13,2,'b'],[5,10,2,'v'],[null,null,4]],
+   tip:'Bend the B string at fret 13 with your pinky, ring finger helping, until it matches the high e at fret 10. Both are D. Then play that D for real.'}],
+ money:[
+  {name:'The classic bend',lvl:1,where:'Verse, Gm7 → C',chords:[['Gm7',4],['C',4]],
+   notes:[[3,5,2,'b'],[3,3,1],[2,5,1],[3,5,2,'v'],[null,null,2]],
+   tip:'Bend C up to D on the G string, the most-used rock bend there is. Then Bb and G, and land on C as the C chord arrives.'},
+  {name:'The Dorian E',lvl:2,where:'Verse, Gm7 → C',chords:[['Gm7',4],['C',4]],
+   notes:[[5,3,1],[4,6,1],[4,3,2],[4,5,2,'s'],[3,5,2]],
+   tip:'Slide from D up to E on the B string right as the C chord arrives. E is outside the pentatonic, but it is in this song’s scale, and it makes the C chord shine.'},
+  {name:'Low-string answer',lvl:2,where:'Verse, Gm7 bars',chords:[['Gm7',4],['Gm7',4]],
+   notes:[[0,3,.5],[0,6,.5],[1,3,.5],[1,5,1],[2,3,.5],[2,5,1,'v'],[null,null,4]],
+   tip:'The same box on the thick strings sounds like a riff. Mute the strings you’re not using with your picking hand, and play it with short, punchy notes.'},
+  {name:'Push into C',lvl:3,where:'Verse, Bb → C → Gm7',chords:[['Bb',2],['C',2],['Gm7',4]],
+   notes:[[4,3,1],[4,6,1],[3,3,.5],[3,5,1.5,'h'],[2,5,4,'v']],
+   tip:'D and F belong to Bb. Over C, pick Bb and hammer onto C quickly, then land on G for the whole Gm7 bar.'}]
+};
+const LVL=['','Easy','Medium','Harder'];
+function lickTab(L){
+  const cells=[];let beat=0;const starts=[];let acc=0;L.chords.forEach(([c,b])=>{starts.push([acc,c]);acc+=b});
+  let prevF=null;
+  L.notes.forEach(([s,f,d,t])=>{
+    let txt=f==null?'·':(t==='h'&&prevF!=null?'h'+f:t==='s'&&prevF!=null?'/'+f:String(f))+(t==='b'?'b':t==='v'?'~':'');
+    const ch=starts.find(([a])=>a>=beat-1e-6&&a<beat+d-1e-6);
+    cells.push({s,txt,ch:ch?ch[1]:'',d});beat+=d;if(f!=null)prevF=f;
+  });
+  const frac=d=>({0.5:'½',1:'1',1.5:'1½',2:'2',2.5:'2½',3:'3',4:'4'})[d]||String(d);
+  const w=Math.max(...cells.map(c=>Math.max(c.txt.length,c.ch.length)))+2;
+  const head='   '+cells.map(c=>c.ch.padEnd(w)).join('');
+  const rows=[5,4,3,2,1,0].map(s=>SNAME[s]+'|-'+cells.map(c=>(c.s===s||(c.s==null&&false)?c.txt:'').padEnd(w,'-')).join('')+'|');
+  const beats='   '+cells.map(c=>((c.s==null?'·':'')+frac(c.d)).padEnd(w)).join('')+' ← beats';
+  return head+'\n'+rows.join('\n')+'\n'+beats;
+}
+const SNAME=['E','A','D','G','B','e'];
+function miniTab(notes,heads,w=5){
+  const top=heads?'   '+heads.map(h=>String(h).padEnd(w)).join(''):null;
+  const rows=[5,4,3,2,1,0].map(s=>SNAME[s]+'|'+notes.map(([ns,f])=>(ns===s?('-'+f).padEnd(w,'-'):'-'.repeat(w))).join('')+'|');
+  return (top?top+'\n':'')+rows.join('\n');
+}
+
+function allSongs(){return BUILTIN.concat(custom)}
+function song(){return allSongs().find(s=>s.id===S.song)||BUILTIN[0]}
+function prog(){const s=song();return s.sections[S.section]||Object.values(s.sections)[0]}
+function useFlats(s){return s.mode==='major'?[5,10,3,8,1,6].includes(s.tonic):[2,7,0,5,10,3].includes(s.tonic)}
+function nm(pc){return (useFlats(song())?MIXED:SHARP)[((pc%12)+12)%12]}
+
+function parseChord(sym){
+  const m=/^([A-G])([#b]?)([^/\s]*)(?:\/([A-G][#b]?))?$/.exec(sym);
+  if(!m)return null;
+  let root=LETTER[m[1]]+(m[2]==='#'?1:m[2]==='b'?-1:0);root=(root+12)%12;
+  const q=m[3];let iv;
+  if(/^(maj7|M7|Δ7?)$/.test(q))iv=[0,4,7,11];
+  else if(/^(m7|min7|-7)$/.test(q))iv=[0,3,7,10];
+  else if(/^(m|min|-)$/.test(q))iv=[0,3,7];
+  else if(/^(m9|madd9)$/.test(q))iv=[0,3,7,2];
+  else if(/^(7|9|13)$/.test(q))iv=[0,4,7,10];
+  else if(q==='5')iv=[0,7];
+  else if(/^(4|sus4|sus|7sus4)$/.test(q))iv=[0,5,7];
+  else if(/^(2|sus2)$/.test(q))iv=[0,2,7];
+  else if(/^(dim|o)$/.test(q))iv=[0,3,6];
+  else if(/^(m7b5|ø)$/.test(q))iv=[0,3,6,10];
+  else if(/^(aug|\+)$/.test(q))iv=[0,4,8];
+  else if(/^(6|add9|maj9)$/.test(q))iv=q==='6'?[0,4,7,9]:[0,4,7,2];
+  else if(q==='')iv=[0,4,7];
+  else return null;
+  return {sym,root,iv,minor:iv.includes(3),tones:iv.map(i=>(root+i)%12)};
+}
+
+function keyData(){
+  const s=song();const sc=SCALES[s.mode].map(i=>(s.tonic+i)%12);
+  const minorRoot=s.mode==='major'?(s.tonic+9)%12:s.tonic;
+  const pent=[0,3,5,7,10].map(i=>(minorRoot+i)%12);
+  return {full:sc,pent,minorRoot};
+}
+function boxCells(k){ // k = 1..5
+  const {pent}=keyData();
+  const startPc=pent[k-1];const startFret=((startPc-4)%12+12)%12;
+  let pitch=40+startFret;const cells=[];
+  for(let s=0;s<6;s++){
+    for(let n=0;n<2;n++){
+      if(!(s===0&&n===0)){do{pitch++}while(!pent.includes(pitch%12))}
+      cells.push({s,f:pitch-OPEN[s],midi:pitch});
+    }
+  }
+  const fr=cells.map(c=>c.f);
+  return {cells,min:Math.min(...fr),max:Math.max(...fr),start:startFret};
+}
+
+/* ---------- render ---------- */
+const $=id=>document.getElementById(id);
+function renderSongs(){
+  const el=$('songs');el.innerHTML='';
+  allSongs().forEach(s=>{
+    const b=document.createElement('button');b.className='song';b.setAttribute('aria-pressed',s.id===S.song);
+    b.innerHTML=`<span class="t" dir="auto"></span><span class="a" dir="auto"></span><span class="k"></span>`;
+    b.querySelector('.t').textContent=s.name;b.querySelector('.a').textContent=s.artist||'';
+    b.querySelector('.k').textContent=keyName(s);
+    b.onclick=()=>{stop();S.lick=null;$('lickNow').hidden=true;S.song=s.id;store.set('nn-song',s.id);S.section=Object.keys(s.sections)[0];S.idx=0;S.bpm=null;S.colorIv=null;renderAll()};
+    el.appendChild(b);
+  });
+  const a=document.createElement('button');a.className='song add';a.innerHTML='<span class="t">+ Add a song</span><span class="a">Paste chords from your tabs</span>';
+  a.onclick=()=>{$('fName').focus();$('addForm').scrollIntoView({behavior:'smooth',block:'center'})};
+  el.appendChild(a);
+}
+function keyName(s){const n=(useFlatsFor(s)?MIXED:SHARP)[s.tonic];return s.mode==='major'?n+' major':s.mode==='minor'?n+' minor':n+' Dorian'}
+function useFlatsFor(s){return s.mode==='major'?[5,10,3,8,1,6].includes(s.tonic):[2,7,0,5,10,3].includes(s.tonic)}
+
+function renderSections(){
+  const el=$('sections');el.innerHTML='';
+  Object.keys(song().sections).forEach(k=>{
+    const b=document.createElement('button');b.textContent=k;b.setAttribute('aria-pressed',k===S.section);
+    b.onclick=()=>{clearLick();S.section=k;S.idx=0;S.colorIv=null;if(S.playing){restartLoop()}renderAll()};el.appendChild(b);
+  });
+}
+function renderStrip(){
+  const el=$('strip');el.innerHTML='';
+  prog().forEach(([c,b],i)=>{
+    const x=document.createElement('button');x.className='chip';x.setAttribute('aria-current',i===S.idx);
+    x.innerHTML=`<span></span><small>${b} beats</small>`;x.firstChild.textContent=c;
+    x.onclick=()=>{S.idx=i;S.colorIv=null;renderChordDependent()};el.appendChild(x);
+  });
+  const p=prog();const cur=p[S.idx][0];const nxt=p[(S.idx+1)%p.length][0];
+  $('cur').textContent=cur;$('nxt').textContent='next: '+nxt;
+}
+function renderTransport(){
+  const s=song();if(S.bpm==null)S.bpm=s.bpm||100;
+  $('tempo').value=S.bpm;$('bpm').textContent=S.bpm;$('tempoNote').textContent=s.tempoNote||'Timing is a simple loop of 4 beats per chord unless you set it.';
+  $('play').innerHTML=S.playing?'<svg viewBox="0 0 20 20"><rect x="4" y="4" width="12" height="12" rx="1"/></svg>':'<svg viewBox="0 0 20 20"><path d="M5 3l12 7-12 7z"/></svg>';
+  $('play').setAttribute('aria-label',S.playing?'Stop loop':'Play loop');
+}
+function segBind(id,key,map){
+  document.querySelectorAll('#'+id+' button').forEach(b=>{
+    const v=b.dataset.v;b.setAttribute('aria-pressed',String(map?map(v)===S[key]:v===S[key]));
+    b.onclick=()=>{clearLick();S[key]=map?map(v):v;renderControls();renderBoard();renderTab()};
+  });
+}
+function renderControls(){
+  segBind('scaleSeg','scale');segBind('labelSeg','labels');segBind('followSeg','follow',v=>v==='on');
+  const el=$('boxSeg');el.innerHTML='';
+  const all=document.createElement('button');all.textContent='Whole neck';all.setAttribute('aria-pressed',S.box===0);all.onclick=()=>{clearLick();S.box=0;renderControls();renderBoard();renderTab()};el.appendChild(all);
+  for(let k=1;k<=5;k++){const bx=boxCells(k);const b=document.createElement('button');b.textContent=`Box ${k} · fr ${bx.start}`;b.setAttribute('aria-pressed',S.box===k);b.onclick=()=>{clearLick();S.box=k;renderControls();renderBoard();renderTab()};el.appendChild(b)}
+}
+function currentChord(){return parseChord(prog()[S.idx][0])||parseChord('C')}
+
+function renderBoard(){
+  const kd=keyData();const ch=currentChord();
+  const scale=S.scale==='pent'?kd.pent:kd.full;
+  const box=S.box?boxCells(S.box):null;
+  const boxSet=box?new Set(box.cells.map(c=>c.s+'-'+c.f)):null;
+  const colorPc=S.colorIv==null?null:(ch.root+S.colorIv)%12;
+  const W=1100,nutX=56,fw=(W-nutX-14)/FRETS,top=28,gap=38;
+  const xOf=f=>f===0?nutX-26:nutX+(f-0.5)*fw;
+  const yOf=s=>top+(5-s)*gap; // high e (5) on top
+  let o='';
+  o+=`<rect x="0" y="0" width="${W}" height="262" fill="var(--wood)"/>`;
+  o+=`<rect x="${nutX}" y="${top-12}" width="${W-nutX-14}" height="${gap*5+24}" fill="var(--wood-2)"/>`;
+  [3,5,7,9,15].forEach(f=>{o+=`<circle cx="${nutX+(f-0.5)*fw}" cy="${top+gap*2.5}" r="7" fill="var(--inlay)"/>`});
+  o+=`<circle cx="${nutX+11.5*fw}" cy="${top+gap*1.5}" r="7" fill="var(--inlay)"/><circle cx="${nutX+11.5*fw}" cy="${top+gap*3.5}" r="7" fill="var(--inlay)"/>`;
+  if(box){const x1=box.min===0?nutX-44:nutX+(box.min-1)*fw;const x2=nutX+box.max*fw;
+    o+=`<rect x="${x1+2}" y="${top-16}" width="${x2-x1-4}" height="${gap*5+32}" rx="8" fill="none" stroke="var(--color)" stroke-opacity=".55" stroke-width="2" stroke-dasharray="6 5"/>`}
+  for(let f=1;f<=FRETS;f++){const x=nutX+f*fw;o+=`<line x1="${x}" y1="${top-12}" x2="${x}" y2="${top+gap*5+12}" stroke="var(--fret)" stroke-width="2"/>`}
+  o+=`<rect x="${nutX-5}" y="${top-12}" width="6" height="${gap*5+24}" fill="var(--nut)"/>`;
+  for(let s=0;s<6;s++){const y=yOf(s);o+=`<line x1="${nutX-44}" y1="${y}" x2="${W-14}" y2="${y}" stroke="var(--string)" stroke-width="${1+ (5-s)*0.0 + (s<3?(3-s)*0.6:0.4)}"/>`;
+    o+=`<text x="10" y="${y+4}" font-family="var(--font-mono)" font-size="12" fill="var(--fret)">${['E','A','D','G','B','e'][s]}</text>`}
+  for(let f=0;f<=FRETS;f++){o+=`<text x="${xOf(f)}" y="252" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="${[3,5,7,9,12,15].includes(f)?'var(--nut)':'var(--fret)'}">${f}</text>`}
+  if(S.lick){
+    const pos=new Map();S.lick.notes.forEach(([s,f],i)=>{if(f==null)return;const k=s+'-'+f;if(!pos.has(k))pos.set(k,{s,f,n:[]});pos.get(k).n.push(i)});
+    const order=[];S.lick.notes.forEach(([s,f])=>{if(f!=null)order.push(s+'-'+f)});
+    for(let s=0;s<6;s++)for(let f=0;f<=FRETS;f++){const pc=(OPEN[s]+f)%12;if(kd.pent.includes(pc)&&!pos.has(s+'-'+f))o+=`<circle cx="${xOf(f)}" cy="${yOf(s)}" r="9" fill="var(--scale)" opacity=".22"/>`}
+    let num=0;const firstNum=new Map();order.forEach(k=>{num++;if(!firstNum.has(k))firstNum.set(k,[]);firstNum.get(k).push(num)});
+    pos.forEach((p,k)=>{const x=xOf(p.f),y=yOf(p.s),pc=(OPEN[p.s]+p.f)%12;const cur=S.lickCur===k;
+      const lbl=firstNum.get(k).join(',');
+      o+=`<g class="dot" data-midi="${OPEN[p.s]+p.f}"><title>${nm(pc)} · string ${6-p.s}, fret ${p.f}</title>`;
+      if(cur)o+=`<circle cx="${x}" cy="${y}" r="19" fill="none" stroke="var(--color)" stroke-width="4"/>`;
+      o+=`<circle class="body" cx="${x}" cy="${y}" r="${cur?16:14}" fill="${cur?'var(--color)':pc===song().tonic?'var(--root)':'var(--chord)'}"/>`;
+      o+=`<text x="${x}" y="${y+4}" text-anchor="middle" font-family="var(--font-mono)" font-weight="700" font-size="${lbl.length>3?9:11}" fill="${pc===song().tonic&&!cur?'#fff':'#1A2030'}" pointer-events="none">${lbl}</text></g>`});
+    $('board').innerHTML=o;
+    $('boardTitle').textContent='Lick: '+S.lick.name;
+    $('keyInfo').textContent='Numbers show the playing order · red = home note';
+    return;
+  }
+  for(let s=0;s<6;s++)for(let f=0;f<=FRETS;f++){
+    const midi=OPEN[s]+f,pc=midi%12;
+    const inScale=scale.includes(pc);const isChord=S.follow&&ch.tones.includes(pc);const isColor=colorPc===pc;
+    if(!(inScale||isChord||isColor))continue;
+    if(box){
+      if(S.scale==='pent'&&inScale&&!isChord&&!isColor){if(!boxSet.has(s+'-'+f))continue}
+      else if(f<box.min||f>box.max)continue;
+    }
+    const isRoot=isChord&&pc===ch.root;const special=isChord&&!kd.pent.includes(pc);
+    let fill='var(--scale)',ink='var(--scale-ink)',op=1;
+    if(isRoot){fill='var(--root)';ink='#fff'}
+    else if(isChord&&special){fill='var(--special)';ink='#fff'}
+    else if(isChord){fill='var(--chord)';ink='#1A2030'}
+    else if(isColor){fill='var(--color)';ink='#1A2030'}
+    else if(S.follow)op=.62;
+    const x=xOf(f),y=yOf(s);
+    let label='';
+    if(S.labels==='notes')label=nm(pc);else if(S.labels==='intervals')label=IVL[(pc-ch.root+12)%12];
+    o+=`<g class="dot" data-midi="${midi}" opacity="${op}"><title>${nm(pc)} · string ${6-s}, fret ${f}</title>`;
+    if(isColor)o+=`<circle cx="${x}" cy="${y}" r="17" fill="none" stroke="var(--color)" stroke-width="2.5" stroke-dasharray="4 3"/>`;
+    if(S.home&&pc===song().tonic)o+=`<circle cx="${x}" cy="${y}" r="17" fill="none" stroke="var(--root)" stroke-width="3.5"/>`;
+    o+=`<circle class="body" cx="${x}" cy="${y}" r="13" fill="${fill}"/>`;
+    if(label)o+=`<text x="${x}" y="${y+4}" text-anchor="middle" font-family="var(--font-mono)" font-weight="700" font-size="${label.length>2?10:12}" fill="${ink}" pointer-events="none">${label}</text>`;
+    o+='</g>';
+  }
+  $('board').innerHTML=o;
+  const s=song();
+  $('keyInfo').textContent=s.mode==='major'?`Key ${nm(s.tonic)} major · ${nm(kd.minorRoot)} minor pentatonic = ${nm(s.tonic)} major pentatonic`:`Key ${keyName(s)} · ${nm(kd.minorRoot)} minor pentatonic`;
+  $('boardTitle').textContent=(S.scale==='pent'?'Pentatonic':'Full scale')+(S.box?` · Box ${S.box}`:' · whole neck');
+}
+function renderTab(){
+  if(!S.box){$('tabBlock').hidden=true;return}$('tabBlock').hidden=false;
+  const box=boxCells(S.box);let notes=box.cells.slice();
+  if(S.scale==='full'){const kd=keyData();notes=[];
+    for(let s=0;s<6;s++)for(let f=box.min;f<=box.max;f++){const m=OPEN[s]+f;if(kd.full.includes(m%12))notes.push({s,f,midi:m})}
+    // keep ascending, drop a note if same pitch appears on the next string
+    notes.sort((a,b)=>a.s-b.s||a.f-b.f);const seen=new Set();notes=notes.filter(n=>{if(seen.has(n.midi))return false;seen.add(n.midi);return true});
+  }
+  const names=['E','A','D','G','B','e'];const lines=[[],[],[],[],[],[]];
+  notes.forEach(n=>{for(let s=0;s<6;s++){lines[s].push(s===n.s?String(n.f).padEnd(2,'-')+'-':'---')}});
+  $('tab').textContent=[5,4,3,2,1,0].map(s=>names[s]+'|-'+lines[s].join('')+'|').join('\n');
+  $('tabLabel').textContent=`Box ${S.box} as tab (${S.scale==='pent'?'pentatonic':'full scale'}), play it up and back down`;
+}
+function renderColor(){
+  const ch=currentChord();const kd=keyData();
+  $('colorChord').textContent=ch.sym;
+  const t=$('chordTones');t.innerHTML='';
+  ch.tones.forEach(pc=>{const sp=document.createElement('span');sp.className='tone';
+    const special=!kd.pent.includes(pc);sp.style.background=pc===ch.root?'var(--root)':special?'var(--special)':'var(--chord)';
+    if(pc===ch.root||special)sp.style.color='#fff';sp.textContent=nm(pc)+' ('+IVL[(pc-ch.root+12)%12]+')';t.appendChild(sp)});
+  const sp=ch.tones.filter(pc=>!kd.pent.includes(pc));
+  $('specialNote').textContent=sp.length?`${sp.map(nm).join(' and ')} ${sp.length>1?'are':'is'} in this chord but not in the pentatonic. Landing on ${sp.length>1?'them':'it'} right when ${ch.sym} arrives makes your solo follow the chords.`:`All of ${ch.sym}'s notes are already in the pentatonic, so any amber or red dot is a safe landing.`;
+  const base=ch.root;const cands=ch.minor?[[2,'add9'],[5,'add11'],[10,'7'],[9,'6']]:[[2,'add9'],[5,'sus4'],[9,'6'],[11,'maj7'],[10,'7']];
+  const list=$('colorList');list.innerHTML='';
+  const rootName=ch.sym.replace(/\/.*$/,'').match(/^[A-G][#b]?/)[0];
+  cands.filter(([iv])=>!ch.iv.includes(iv)).map(([iv,suf])=>{const pc=(base+iv)%12;return {iv,suf,pc,inKey:kd.full.includes(pc)}})
+   .sort((a,b)=>b.inKey-a.inKey)
+   .forEach(c=>{
+    const b=document.createElement('button');b.className='colorbtn';b.type='button';b.setAttribute('aria-pressed',S.colorIv===c.iv);
+    const chordName=rootName+(ch.minor?'m':'')+(c.suf==='sus4'&&!ch.minor?'sus4':c.suf);
+    b.innerHTML=`<span class="nm"></span><span class="ad"></span><span class="pill ${c.inKey?'in':'out'}">${c.inKey?'fits the key':'outside the key'}</span>`;
+    b.querySelector('.nm').textContent=chordName;
+    b.querySelector('.ad').textContent=(c.suf==='sus4'?'replace the 3rd with ':'add ')+nm(c.pc);
+    b.onclick=()=>{S.colorIv=S.colorIv===c.iv?null:c.iv;renderColor();renderBoard()};
+    list.appendChild(b);
+  });
+}
+function renderMissions(){
+  const s=song();const ms=s.missions||[
+    ['Find home: Box 1','Loop the Verse and use only the dots in Box 1. Start and end each phrase on the key note, '+nm(s.tonic)+'.'],
+    ['Land on the chords','With "Follow chord" on, land on an amber or red dot each time the chord changes.'],
+    ['Find the special notes','Look for pink dots: chord notes outside the pentatonic. Hit each one when its chord arrives.'],
+    ['Connect two boxes','Play one phrase that starts in Box 1 and ends in Box 2.'],
+    ['Add color','Try each chord’s add9 or sus4 from the Color panel, in your strumming and in your solo.']];
+  $('missionTitle').textContent='Missions for '+s.name;
+  const el=$('missions');el.innerHTML='';const d=done[s.id]||[];
+  ms.forEach(([t,p],i)=>{
+    const row=document.createElement('label');row.className='mission'+(d.includes(i)?' done':'');
+    row.innerHTML=`<input type="checkbox" id="m-${s.id}-${i}"><div style="display:grid;gap:3px;min-width:0"><h3></h3><p dir="auto"></p></div>`;
+    row.querySelector('h3').textContent=(i+1)+'. '+t;row.querySelector('p').textContent=p;
+    const cb=row.querySelector('input');cb.checked=d.includes(i);
+    cb.onchange=()=>{const arr=new Set(done[s.id]||[]);cb.checked?arr.add(i):arr.delete(i);done[s.id]=[...arr];store.set('nn-missions',done);renderMissions()};
+    el.appendChild(row);
+  });
+  const n=d.length;$('missionCount').textContent=`${n} of ${ms.length} done`;$('missionBar').style.width=(n/ms.length*100)+'%';
+  const ln=$('links');ln.innerHTML='';
+  (s.links||[['Find on Spotify','https://open.spotify.com/search/'+encodeURIComponent((s.artist||'')+' '+s.name)],['Search Ultimate Guitar','https://www.ultimate-guitar.com/search.php?search_type=title&value='+encodeURIComponent(s.name)]]).forEach(([t,u])=>{const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';a.textContent=t+' ↗';ln.appendChild(a)});
+  if(s.custom){const del=document.createElement('button');del.className='btn';del.type='button';del.textContent='Remove this song';
+    del.onclick=()=>{if(del.dataset.armed){custom=custom.filter(c=>c.id!==s.id);store.set('nn-songs',custom);S.song='maka';renderAll()}else{del.dataset.armed='1';del.textContent='Tap again to remove'}};ln.appendChild(del)}
+}
+function guideFor(s){
+  if(GUIDE[s.id])return GUIDE[s.id];
+  // custom songs: pick the nearest chord tone inside Box 1 for each verse chord
+  const box=boxCells(1);const verse=s.sections.Verse||Object.values(s.sections)[0];
+  let prev=box.cells[4];const targets=[];
+  verse.slice(0,6).forEach(([c])=>{const ch=parseChord(c);if(!ch)return;
+    const cand=box.cells.filter(n=>ch.tones.includes(n.midi%12));if(!cand.length)return;
+    cand.sort((a,b)=>Math.abs(a.midi-prev.midi)-Math.abs(b.midi-prev.midi));prev=cand[0];
+    targets.push([c,prev.s,prev.f,nm(prev.midi%12)])});
+  return {targets,special:null,record:'Start by playing only in the gaps between sung lines and in any instrumental parts.'};
+}
+function showMe(cfg){
+  clearLick();Object.assign(S,{box:1,scale:'pent',labels:'notes',colorIv:null},cfg);
+  if(cfg.section){S.section=cfg.section;S.idx=cfg.idx||0}
+  renderSections();renderStrip();renderControls();renderBoard();renderTab();renderColor();
+  $('board').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function renderGuide(){
+  const s=song();const g=guideFor(s);const box=boxCells(1);const home=nm(s.tonic);
+  const homes=box.cells.filter(c=>c.midi%12===s.tonic);
+  const bendFret=box.start+2;const bendFrom=nm((OPEN[3]+bendFret)%12),bendTo=nm((OPEN[3]+bendFret+2)%12);
+  $('guideTitle').textContent='How to solo with the box: '+s.name;
+  $('guideIntro').textContent=`The box is a map of notes that fit the whole song. You don't need to know theory to use it. Any note in it sounds fine over every chord. The steps below turn "fine" into "musical". For this song, Box 1 starts at fret ${box.start}, and the home note is ${home}.`;
+  const steps=[
+   {t:'Learn the shape',m:'5 min',cfg:{follow:false,home:false},
+    html:`<p>Put one finger per fret: <strong>index on fret ${box.start}</strong>, ring finger 2 frets higher, pinky 3 frets higher. Play every note from the thick string to the thin one and back, one note per click. Set the tempo to 70 and press play with "Scale only" on.</p><pre class="tab">${miniTab(box.cells.map(c=>[c.s,c.f]),null,3)}</pre><p>Say the note names out loud as you go. When you can play it with your eyes closed, move on.</p>`},
+   {t:'Find home',m:'3 min',cfg:{follow:false,home:true},
+    html:`<p>The home note is <strong>${home}</strong>. In Box 1 it sits in ${homes.length} places:</p><pre class="tab">${miniTab(homes.map(c=>[c.s,c.f]),homes.map(()=>home))}</pre><p>Loop the verse and play <strong>only these notes</strong>, in any rhythm. Ending a phrase on home sounds finished. Ending anywhere else sounds like a question. Both are useful.</p>`},
+   {t:'Play short, then rest',m:'5 min',cfg:{follow:false,home:true},
+    html:`<p>Play 3 or 4 notes from the box, then stop for the rest of the bar. In the next bar, answer yourself.</p><ul><li><strong>Rule: one bar on, one bar off.</strong></li><li>Repeat the same rhythm with different notes. A repeated rhythm sounds planned.</li><li>Start each phrase on home, then try ending on it instead.</li></ul><p>Most beginners play too many notes. The gaps are what make it sound like a solo instead of a scale.</p>`},
+   {t:'Land on the chord',m:'7 min',cfg:{follow:true,home:false,section:'Verse',idx:0},
+    html:`<p>Now turn on <strong>Follow chord</strong>. The amber and red dots are the notes of the chord playing right now. Play anything in the box, but on the <strong>first beat of each new chord</strong>, arrive on its target:</p><pre class="tab">${g.targets.length?miniTab(g.targets.map(t=>[t[1],t[2]]),g.targets.map(t=>t[0])):'Add verse chords to see targets.'}</pre><p>${g.targets.length?'Targets in order: '+g.targets.map(t=>`${t[0]} → ${t[3]}`).join(', ')+'.':''} They are close together, so your hand barely moves. First play just the targets, one per chord. Then add a couple of notes before each one.</p>`},
+   g.special?{t:'Add the special note',m:'3 min',cfg:{follow:true,home:false,section:'Verse',idx:g.special.chordIdx},
+    html:`<p>One note outside the box makes the song sound like itself. Here it is <strong>${g.special.note}</strong>, the pink dot.</p><pre class="tab">${miniTab([g.special.pos],[g.special.note])}</pre><p>${g.special.text}</p>`}
+   :{t:'Add the special notes',m:'3 min',cfg:{follow:true,home:false},
+    html:`<p>With Follow chord on, look for pink dots. They are chord notes outside the box. Land on one right when its chord arrives, then return to the box.</p>`},
+   {t:'Make the notes sing',m:'any time',cfg:{follow:true,home:true},
+    html:`<ul><li><strong>Slide</strong> into a target from 2 frets below instead of just pressing it.</li><li><strong>Bend:</strong> on the G string, fret ${bendFret} (${bendFrom}), push the string up until it sounds like ${bendTo}, the next box note. Check the pitch by playing fret ${bendFret+2} first.</li><li><strong>Vibrato</strong> on the last note of a phrase: shake the string gently up and down.</li></ul><p>One of these on the last note of each phrase is enough.</p>`},
+   {t:'Play with the record',m:'5 min',cfg:{follow:true,home:false},
+    html:`<p>Set the tempo to ${s.bpm||'the song’s'} bpm, then play along with the real track instead of the loop. Stay in Box 1.</p><p>${g.record}</p><p>When Box 1 feels easy, try the same phrases in Box 2.</p>`}
+  ];
+  const el=$('steps');el.innerHTML='';
+  steps.forEach((st,i)=>{const d=document.createElement('div');d.className='step';
+    d.innerHTML=`<div class="step-head"><span class="step-num">${i+1}</span><h3></h3><span class="mins">${st.m}</span></div>${st.html}`;
+    d.querySelector('h3').textContent=st.t;
+    const b=document.createElement('button');b.className='btn';b.type='button';b.textContent='Show me on the board';b.onclick=()=>showMe(st.cfg);d.appendChild(b);
+    el.appendChild(d)});
+}
+function renderLicks(){
+  const s=song();const list=LICKS[s.id];const el=$('lickList');el.innerHTML='';
+  $('licksTitle').textContent='Licks for '+s.name;
+  if(!list){el.innerHTML='<p class="note">Licks are written for the three built-in songs. For your own songs, use the guide above: targets plus short phrases make your own licks.</p>';return}
+  list.forEach((L,i)=>{
+    const d=document.createElement('div');d.className='lick'+(S.lick===L?' on':'');
+    d.innerHTML=`<div class="meta"><span class="lvl l${L.lvl}">${LVL[L.lvl]}</span><span class="note">${L.where}</span></div><h3></h3><span class="prog">${L.chords.map(c=>c[0]).join(' → ')}</span><pre class="tab"></pre><p></p><div class="row"></div>`;
+    d.querySelector('h3').textContent=L.name;d.querySelector('pre').textContent=lickTab(L);d.querySelector('p').textContent=L.tip;
+    const r=d.querySelector('.row');
+    const p=document.createElement('button');p.className='btn primary';p.type='button';p.textContent='Play it';p.onclick=()=>playLick(L,true);
+    const v=document.createElement('button');v.className='btn';v.type='button';v.textContent='Show on board';v.onclick=()=>showLick(L,true);
+    r.append(p,v);el.appendChild(d)});
+}
+function showLick(L,scroll){
+  stop();S.lick=L;S.lickCur=null;$('lickNow').hidden=false;$('lickNowName').textContent=L.name+' · '+L.chords.map(c=>c[0]).join(' → ');
+  $('lickNowTab').textContent=lickTab(L);renderBoard();renderLicks();
+  if(scroll)$('board').closest('.panel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+let lickTimers=[];
+function stopLick(){lickTimers.forEach(clearTimeout);lickTimers=[];S.lickCur=null}
+function clearLick(){stopLick();if(S.lick){S.lick=null;$('lickNow').hidden=true;renderLicks()}}
+function lickNote(m,t,dur,tech,prev){
+  const o=ctx.createOscillator(),o2=ctx.createOscillator(),g=ctx.createGain(),g2=ctx.createGain();
+  o.type='triangle';o2.type='sine';g2.gain.value=.25;
+  const f0=hz(m);o.frequency.setValueAtTime(f0,t);o2.frequency.setValueAtTime(f0*2,t);
+  if(tech==='s'&&prev!=null){o.frequency.setValueAtTime(hz(prev),t);o2.frequency.setValueAtTime(hz(prev)*2,t);o.frequency.exponentialRampToValueAtTime(f0,t+.09);o2.frequency.exponentialRampToValueAtTime(f0*2,t+.09)}
+  if(tech==='b'){const tb=t+Math.min(.28,dur*.5);o.frequency.setValueAtTime(f0,t+.04);o2.frequency.setValueAtTime(f0*2,t+.04);o.frequency.linearRampToValueAtTime(hz(m+2),tb);o2.frequency.linearRampToValueAtTime(hz(m+2)*2,tb)}
+  const len=Math.max(.45,dur+.25);
+  if(tech==='v'||tech==='b'&&dur>=2){const l=ctx.createOscillator(),lg=ctx.createGain();l.frequency.value=5.5;lg.gain.setValueAtTime(0,t);lg.gain.linearRampToValueAtTime(28,t+.35);l.connect(lg);lg.connect(o.detune);lg.connect(o2.detune);l.start(t);l.stop(t+len)}
+  o2.connect(g2).connect(g);o.connect(g).connect(master);
+  const peak=(tech==='h'||tech==='s')?.24:.36;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+.006);g.gain.setValueAtTime(peak,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+len);
+  o.start(t);o2.start(t);o.stop(t+len+.05);o2.stop(t+len+.05);
+}
+function playLick(L,scroll){
+  if(!ensureCtx())return;showLick(L,scroll);
+  const spb=60/S.bpm;const t0=ctx.currentTime+.15;
+  for(let k=0;k<4;k++)click(t0+k*spb,k===0);
+  const start=t0+4*spb;let t=start;
+  L.chords.forEach(([c,b])=>{const ch=parseChord(c)||parseChord('C');
+    const bm=/\/([A-G][#b]?)$/.exec(c);const bpc=bm?(LETTER[bm[1][0]]+(bm[1][1]==='#'?1:bm[1][1]==='b'?-1:0)+12)%12:ch.root;
+    for(let k=0;k<b;k++){const tt=t+k*spb;click(tt,k===0);stab(ch,tt,spb*.9);if(k%2===0)bass(bpc,tt,spb*1.8)}t+=b*spb});
+  let tn=start,prev=null;
+  L.notes.forEach(([s,f,d,tech])=>{
+    if(f!=null){const m=OPEN[s]+f;lickNote(m,tn,d*spb,tech,prev);prev=m;const k=s+'-'+f;
+      lickTimers.push(setTimeout(()=>{S.lickCur=k;renderBoard()},Math.max(0,(tn-ctx.currentTime)*1000)))}
+    tn+=d*spb});
+  lickTimers.push(setTimeout(()=>{S.lickCur=null;if(S.lick===L)renderBoard()},(t-ctx.currentTime)*1000+200));
+}
+function renderChordDependent(){renderStrip();renderBoard();renderColor();
+  document.querySelectorAll('#beats i').forEach(i=>i.classList.remove('on'))}
+function renderAll(){renderSongs();renderSections();renderTransport();renderStrip();renderControls();renderBoard();renderTab();renderColor();renderGuide();renderLicks();renderMissions()}
+
+/* ---------- audio ---------- */
+let ctx=null,master=null,timer=null,nextTime=0,beat=0,flat=[];
+const hz=m=>440*Math.pow(2,(m-69)/12);
+function ensureCtx(){if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;ctx=new AC();master=ctx.createGain();master.gain.value=.8;master.connect(ctx.destination)}if(ctx.state==='suspended')ctx.resume();return ctx}
+function env(g,t,a,peak,d){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+a+d)}
+function pluck(midi,t,vol=.35){const o=ctx.createOscillator(),o2=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o2.type='sine';o.frequency.value=hz(midi);o2.frequency.value=hz(midi)*2;
+  const g2=ctx.createGain();g2.gain.value=.25;o2.connect(g2).connect(g);o.connect(g).connect(master);env(g,t,.005,vol,1.3);o.start(t);o2.start(t);o.stop(t+1.4);o2.stop(t+1.4)}
+function click(t,accent){const o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.value=accent?1500:1000;o.connect(g).connect(master);env(g,t,.001,accent?.06:.035,.03);o.start(t);o.stop(t+.06)}
+function stab(ch,t,dur){const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1300;lp.connect(master);
+  ch.tones.forEach(pc=>{const m=57+((pc-9+12)%12);const o=ctx.createOscillator(),g=ctx.createGain();o.type='sawtooth';o.frequency.value=hz(m);o.connect(g).connect(lp);env(g,t,.012,.045,dur*.85);o.start(t);o.stop(t+dur)})}
+function bass(pc,t,dur){const m=36+pc;const o=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o.frequency.value=hz(m);o.connect(g).connect(master);env(g,t,.01,.35,dur*.9);o.start(t);o.stop(t+dur)}
+function buildFlat(){flat=[];prog().forEach(([c,b],i)=>{for(let k=0;k<b;k++)flat.push({i,k,c})})}
+function schedule(){
+  const spb=60/S.bpm;
+  while(nextTime<ctx.currentTime+.15){
+    const step=flat[beat%flat.length];const ch=parseChord(step.c)||parseChord('C');
+    click(nextTime,step.k===0);stab(ch,nextTime,spb*.9);
+    if(step.k%2===0){const bpc=(()=>{const m=/\/([A-G][#b]?)$/.exec(step.c);if(!m)return ch.root;return (LETTER[m[1][0]]+(m[1][1]==='#'?1:m[1][1]==='b'?-1:0)+12)%12})();bass(bpc,nextTime,spb*1.8)}
+    const when=(nextTime-ctx.currentTime)*1000;const st={...step};
+    setTimeout(()=>{if(!S.playing)return;if(st.i!==S.idx){S.idx=st.i;if(S.colorIv!=null)S.colorIv=null;renderChordDependent()}
+      document.querySelectorAll('#beats i').forEach((el,j)=>el.classList.toggle('on',j===st.k%4))},Math.max(0,when));
+    nextTime+=spb;beat++;
+  }
+}
+function start(){if(!ensureCtx())return;if(S.lick){clearLick();renderBoard()}buildFlat();beat=flat.findIndex(f=>f.i===S.idx&&f.k===0);if(beat<0)beat=0;nextTime=ctx.currentTime+.08;S.playing=true;timer=setInterval(schedule,25);schedule();renderTransport()}
+function stop(){stopLick();S.playing=false;clearInterval(timer);timer=null;renderTransport();document.querySelectorAll('#beats i').forEach(i=>i.classList.remove('on'))}
+function restartLoop(){stop();S.idx=0;start()}
+
+$('play').onclick=()=>S.playing?stop():start();
+$('lickClear').onclick=()=>{clearLick();renderBoard()};
+$('lickReplay').onclick=()=>{if(S.lick){stopLick();playLick(S.lick,false)}};
+$('tempo').oninput=e=>{S.bpm=+e.target.value;$('bpm').textContent=S.bpm};
+$('board').addEventListener('click',e=>{const g=e.target.closest('.dot');if(!g||!ensureCtx())return;pluck(+g.dataset.midi,ctx.currentTime+.01)});
+
+/* ---------- add song ---------- */
+SHARP.forEach((n,i)=>{const o=document.createElement('option');o.value=i;o.textContent=MIXED[i]===n?n:n+' / '+MIXED[i];$('fRoot').appendChild(o)});
+function parseLine(txt){const toks=txt.replace(/\|/g,' ').split(/\s+/).filter(Boolean);const out=[],bad=[];
+  toks.forEach(t=>{const [c,b]=t.split(':');if(parseChord(c)){out.push([c,b&&+b>0?Math.min(16,+b):4])}else if(/^[A-G]/.test(t))bad.push(t)});return {out,bad}}
+$('addForm').addEventListener('submit',e=>{e.preventDefault();const err=$('fErr');err.textContent='';
+  const name=$('fName').value.trim();const v=parseLine($('fVerse').value),c=parseLine($('fChorus').value);
+  if(!name){err.textContent='Add a song name so you can find it again.';return}
+  if(!v.out.length){err.textContent='Paste at least one verse chord, for example: Am G F E.';return}
+  const bad=v.bad.concat(c.bad);if(bad.length){err.textContent='These chords weren’t recognised: '+bad.join(', ')+'. Simplify them (for example, Cadd9 → C) and try again.';return}
+  const s={id:'c'+Date.now(),custom:true,name,artist:$('fArtist').value.trim(),tonic:+$('fRoot').value,mode:$('fMode').value,bpm:100,sections:{Verse:v.out}};
+  if(c.out.length)s.sections.Chorus=c.out;
+  custom.push(s);store.set('nn-songs',custom);stop();S.song=s.id;S.section='Verse';S.idx=0;S.bpm=null;S.colorIv=null;store.set('nn-song',s.id);
+  e.target.reset();renderAll();window.scrollTo({top:0,behavior:'smooth'});
+});
+
+if(!allSongs().some(s=>s.id===S.song))S.song='maka';
+S.section=Object.keys(song().sections)[0];
+renderAll();
+})();
+</script>
+
+</body>
+</html>
