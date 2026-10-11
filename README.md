@@ -19,14 +19,19 @@ GitBuzz is a single-page web app for learning electric guitar soloing over songs
 | מכה אפורה | מוניקה סקס | D major | 136 bpm | Measured from a recording (live, Galgalatz studio) |
 | Sultans of Swing | Dire Straits | D minor | 149 bpm | Measured from a recording (official video edit) |
 | Money for Nothing | Dire Straits | G minor (Dorian) | 135 bpm | Published lesson sheet, not yet measured |
+| זכרון יעקב | אושיק לוי | A minor | 100 bpm | Starting guess, not yet measured |
 
-Chord charts come from Tab4U and public chord sheets. For מכה אפורה, the verse order was corrected to match the recording. The licks are original, not transcriptions of the recorded solos.
+Chord charts come from Tab4U and public chord sheets. GitBuzz stores chords only. Lyrics stay on Tab4U, and each song links to its Tab4U page. For מכה אפורה, the verse order was corrected to match the recording. The licks are original, not transcriptions of the recorded solos.
 
 ## Running it
 
 GitBuzz is one self-contained file, `index.html`. Open it in any modern browser; it needs no build step and no server. Fonts load from Google Fonts, and the page falls back to system fonts when offline.
 
 Your progress (missions, added songs, last song) is saved in your browser's local storage.
+
+## Adding songs
+
+Songs are defined in the `BUILTIN` array in `index.html`. New songs go just above the `/* @songs-end */` marker. With Claude, the `add-tab4u-song` skill does this from a Tab4U link: it reads the chords, works out the key, adds the song, and commits.
 
 ## Roadmap ideas
 
