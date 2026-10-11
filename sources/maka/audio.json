@@ -1,0 +1,37 @@
+{
+  "plugin": "audio",
+  "ref": "מוניקה סקס - מכה אפורה (חי באולפן גלגלצ).mp3",
+  "fetched": "2026-10-11",
+  "confidence": "high",
+  "fields": {
+    "bpm": 136,
+    "tuningCents": -1,
+    "key": {
+      "tonic": 2,
+      "mode": "major"
+    },
+    "sections": {
+      "Verse": [
+        [
+          "D",
+          4
+        ],
+        [
+          "G",
+          4
+        ],
+        [
+          "A/F#",
+          4
+        ],
+        [
+          "Bm",
+          4
+        ]
+      ]
+    },
+    "notes": [
+      "Live version from the Galgalatz studio. Verse order measured by chord detection and bass tracking (both agreed)."
+    ]
+  }
+}

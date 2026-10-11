@@ -64,6 +64,20 @@
     <p class="note">The board reads like a tab: thin high E string on top, thick low E at the bottom. Tap any dot to hear it. Dots with a thick red ring are the home note.</p>
   </section>
 
+  <section class="panel" id="sheetPanel" aria-label="Song sheet">
+    <div class="row spread">
+      <h2>Song sheet</h2>
+      <span class="muted" id="sheetFrom" style="font-size:14px"></span>
+    </div>
+    <div id="sheetEmpty" class="note">
+      No lyrics for this song yet. Paste its Tab4U or Ultimate Guitar page under <a href="#addPanel" id="sheetGoAdd">Add a song</a>, then choose "attach the lyrics". Chords appear over the words, and tapping a chord shows it on the board.
+    </div>
+    <div class="sheet" id="sheet" hidden></div>
+    <div class="row" id="sheetTools" hidden>
+      <button class="btn" type="button" id="sheetRemove">Remove the lyrics from this browser</button>
+    </div>
+  </section>
+
   <section class="panel" id="guide" aria-label="How to solo with the box">
     <div class="row spread">
       <h2 id="guideTitle">How to solo with the box</h2>
@@ -150,11 +164,58 @@
     <div class="progress"><b id="missionBar"></b></div>
     <div class="missions" id="missions"></div>
     <div class="links" id="links"></div>
+    <details class="sources" id="sourcesBox">
+      <summary>Where this song's data comes from</summary>
+      <div id="sourcesList"></div>
+    </details>
   </section>
 
-  <section class="panel" aria-label="Add a song">
-    <h2>Add a song from your tabs</h2>
-    <p class="muted" style="max-width:70ch">Copy the chords from a song in your Ultimate Guitar list and paste them here. Each chord is one bar of 4 beats. Write <span class="mono">C:2</span> for a 2-beat chord. Lyrics and bar lines are ignored.</p>
+  <section class="panel" id="addPanel" aria-label="Add a song">
+    <h2>Add a song</h2>
+
+    <div class="import">
+      <h3>From a link or a song page</h3>
+      <div class="ctl">
+        <label for="impUrl">Song link (optional)</label>
+        <input type="text" id="impUrl" dir="ltr" placeholder="https://www.tab4u.com/tabs/songs/…  or  https://tabs.ultimate-guitar.com/…">
+      </div>
+      <div class="url-hint" id="impUrlHint" hidden>
+        <p id="impUrlText"></p>
+        <div class="row">
+          <a class="btn" id="impUrlOpen" target="_blank" rel="noopener" href="#">Open the page ↗</a>
+          <button class="btn" type="button" id="impAskCopy">Copy a request for Claude</button>
+          <span class="note" id="impAskMsg" aria-live="polite"></span>
+        </div>
+        <pre class="tab ask" id="impAsk"></pre>
+      </div>
+      <div class="ctl">
+        <label for="impText">Paste the whole page</label>
+        <textarea id="impText" dir="auto" rows="5" placeholder="On the song page, select everything (Ctrl+A or ⌘A), copy, and paste it here. GitBuzz finds the name, artist, sections and chords, and places the chords over the lyrics."></textarea>
+      </div>
+      <div class="row"><button class="btn primary" type="button" id="impRead">Read the page</button><span class="err" id="impErr" role="alert"></span></div>
+      <div class="preview" id="impPreview" hidden>
+        <p class="note" id="impFound"></p>
+        <div class="fgrid">
+          <div class="ctl"><label for="impName">Song name</label><input type="text" id="impName" dir="auto"></div>
+          <div class="ctl"><label for="impArtist">Artist</label><input type="text" id="impArtist" dir="auto"></div>
+          <div class="ctl"><label for="impRoot">Key</label><select id="impRoot"></select></div>
+          <div class="ctl"><label for="impMode">Key type</label>
+            <select id="impMode"><option value="major">Major</option><option value="minor">Minor</option><option value="dorian">Minor, Dorian (bluesy rock)</option></select></div>
+        </div>
+        <p class="note" id="impKeyNote"></p>
+        <div class="imp-sections" id="impSections"></div>
+        <p class="privacy">Lyrics stay in this browser only. They are never uploaded or added to GitHub.</p>
+        <div class="row">
+          <button class="btn primary" type="button" id="impAdd">Add as a new song</button>
+          <span class="muted">or attach the lyrics to</span>
+          <select id="impTarget" aria-label="Song to attach the lyrics to"></select>
+          <button class="btn" type="button" id="impAttach">Attach</button>
+        </div>
+      </div>
+    </div>
+
+    <h3>Or type the chords</h3>
+    <p class="muted" style="max-width:70ch">Each chord is one bar of 4 beats. Write <span class="mono">C:2</span> for a 2-beat chord. Lyrics and bar lines are ignored.</p>
     <form id="addForm" novalidate>
       <div class="fgrid">
         <div class="ctl"><label for="fName">Song name</label><input type="text" id="fName" dir="auto" placeholder="Wonderwall"></div>
@@ -175,12 +236,17 @@
 <script src="js/theory.js"></script>
 <script src="js/notation.js"></script>
 <script src="js/audio.js"></script>
+<!-- data layer: merge (superposition) and in-app ingest plugins -->
+<script src="js/merge.js"></script>
+<script src="js/ingest/registry.js"></script>
+<script src="js/ingest/chordsheet.js"></script>
+<script src="js/ingest/plugins.js"></script>
 <script src="js/songs.js"></script>
 <!-- songs: one file per song; add new <script> lines above the marker -->
-<script src="songs/maka-afora.js"></script>
-<script src="songs/sultans-of-swing.js"></script>
-<script src="songs/money-for-nothing.js"></script>
-<script src="songs/zichron-yaakov.js"></script>
+<script src="songs/maka.js"></script>
+<script src="songs/sultans.js"></script>
+<script src="songs/money.js"></script>
+<script src="songs/zichron.js"></script>
 <!-- @songs-end -->
 <!-- app -->
 <script src="js/app.js"></script>

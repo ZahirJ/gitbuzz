@@ -1,0 +1,44 @@
+{
+  "plugin": "web",
+  "ref": "https://thebandplan.com/songs/587/docs/592",
+  "fetched": "2026-10-10",
+  "confidence": "medium",
+  "fields": {
+    "name": "Sultans of Swing",
+    "artist": "Dire Straits",
+    "lines": {
+      "Verse": [
+        [
+          "Dm",
+          "C",
+          "Bb",
+          "A"
+        ],
+        [
+          "Dm",
+          "C",
+          "Bb",
+          "A"
+        ]
+      ],
+      "Chorus": [
+        [
+          "F",
+          "C"
+        ],
+        [
+          "Bb",
+          "Dm"
+        ]
+      ],
+      "Interlude": [
+        [
+          "Dm",
+          "C",
+          "Bb",
+          "C"
+        ]
+      ]
+    }
+  }
+}

@@ -104,6 +104,41 @@ for (const s of songs) {
 const ids = songs.map(s => s.id);
 ids.forEach((id, i) => { if (ids.indexOf(id) !== i) err(id, 'duplicate id'); });
 
+/* ---------- source records (sources/<id>/*.json) ---------- */
+const PLUGINS = ['tab4u', 'ultimate-guitar', 'web', 'audio', 'paste', 'manual'];
+const FORBIDDEN = ['lyrics', 'lyric', 'text', 'sheet', 'words'];   // lyrics never go in the repo
+const SRC = path.join(ROOT, 'sources');
+const srcIds = fs.existsSync(SRC) ? fs.readdirSync(SRC).filter(d => fs.statSync(path.join(SRC, d)).isDirectory()) : [];
+for (const s of songs) if (!srcIds.includes(s.id)) warn(s.id, 'has no sources/' + s.id + '/ folder (song file is not generated)');
+for (const id of srcIds) {
+  if (!ids.includes(id)) err(id, `sources/${id}/ exists but songs/${id}.js is not loaded (run tools/merge-song.js ${id} and add the script tag)`);
+  for (const f of fs.readdirSync(path.join(SRC, id)).filter(f => f.endsWith('.json'))) {
+    const tag = `sources/${id}/${f}`;
+    let r;
+    try { r = JSON.parse(fs.readFileSync(path.join(SRC, id, f), 'utf8')); } catch (e) { err(tag, 'is not valid JSON: ' + e.message); continue; }
+    if (!PLUGINS.includes(r.plugin)) err(tag, `plugin must be one of ${PLUGINS.join(', ')}`);
+    if (['tab4u', 'ultimate-guitar', 'web'].includes(r.plugin) && !/^https:\/\//.test(r.ref || '')) err(tag, 'ref must be the https URL of the page');
+    if (r.confidence && !['high', 'medium', 'low'].includes(r.confidence)) err(tag, 'confidence must be high, medium or low');
+    const fl = r.fields || {};
+    for (const k of FORBIDDEN) if (k in fl) err(tag, `field "${k}" is not allowed: lyrics are never stored in the repo`);
+    if (fl.key && !(Number.isInteger(fl.key.tonic) && T.MODES.includes(fl.key.mode))) err(tag, 'key must be {tonic: 0–11, mode}');
+    if ('bpm' in fl && !(fl.bpm >= 40 && fl.bpm <= 240)) err(tag, 'bpm must be between 40 and 240');
+    for (const [sec, lines] of Object.entries(fl.lines || {})) {
+      if (!Array.isArray(lines)) { err(tag, `lines.${sec} must be an array of lines`); continue; }
+      lines.forEach((line, i) => (Array.isArray(line) ? line : [line]).forEach(c => {
+        if (typeof c !== 'string' || !T.parseChord(c)) err(tag, `lines.${sec}[${i}] has "${c}", which is not a readable chord (lines hold chord symbols only)`);
+      }));
+    }
+    for (const [sec, prog] of Object.entries(fl.sections || {})) {
+      (prog || []).forEach(([c, b], i) => { if (!T.parseChord(c) || !(b > 0)) err(tag, `sections.${sec}[${i}] is not [chord, beats]`); });
+    }
+  }
+}
+if (srcIds.length) {
+  const r = require('child_process').spawnSync(process.execPath, [path.join(__dirname, 'merge-song.js'), '--check'], { encoding: 'utf8' });
+  if (r.status !== 0) err('songs', 'generated song files are out of date with their records:\n' + r.stdout.trim());
+}
+
 warnings.forEach(w => console.log('warning  ' + w));
 errors.forEach(e => console.log('ERROR    ' + e));
 console.log(`\n${songs.length} songs checked: ${errors.length} errors, ${warnings.length} warnings`);

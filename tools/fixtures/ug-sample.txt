@@ -1,0 +1,40 @@
+Ultimate Guitar Tabs
+Test Song Chords by The Example Band
+Difficulty: novice
+Tuning: E A D G B E
+Key: G
+Capo: no capo
+
+[Intro]
+G  D  Em  C
+
+[Verse 1]
+G             D
+Walking down a made-up road
+Em               C
+Singing words I never wrote
+G             D
+Every line is just a test
+Em          C          D
+Checking that the parser works its best
+
+[Chorus]
+C        G
+Oh oh, this is the hook
+D           Em
+Read it like a book
+
+[Verse 2]
+G             D
+Second verse with other lines
+Em               C
+Still the same old chord designs
+
+[Chorus]
+C        G
+Oh oh, this is the hook
+D           Em
+Read it like a book
+
+Last update: Oct 11, 2026
+Rating

@@ -153,3 +153,39 @@ textarea{font-family:var(--font-mono);font-size:14px;min-height:44px;resize:vert
 .err{color:var(--special);font-size:14px}
 .note{font-size:13px;color:var(--muted)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+/* add a song: import from a link or pasted page */
+#addPanel h3{font-size:16px;font-weight:700}
+.import{display:grid;gap:12px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.url-hint{display:grid;gap:8px;padding:10px 12px;border:1px dashed var(--accent);border-radius:8px;background:var(--surface)}
+.url-hint p{font-size:14px;max-width:75ch}
+.url-hint a.btn{text-decoration:none;font-size:13px}
+.tab.ask{white-space:pre-wrap;word-break:break-all}
+.preview{display:grid;gap:10px;padding:12px;border:1px solid var(--accent);border-radius:10px;background:var(--surface)}
+.imp-sections{display:grid;gap:6px}
+.imp-sec{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.imp-sec b{font-size:13px;min-width:7ch}
+.imp-sec .c{font-family:var(--font-mono);font-weight:700;font-size:13px;padding:2px 7px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line)}
+.privacy{font-size:13px;color:var(--muted);border-inline-start:3px solid var(--accent);padding-inline-start:10px}
+
+/* song sheet: chords over lyrics */
+.sheet{display:grid;gap:2px;max-height:620px;overflow:auto;padding:4px 2px}
+.sheet .sh-head{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-top:12px}
+.sheet .sh-head i{font-style:normal;color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+.sheet .sh-line{display:flex;flex-wrap:wrap;align-items:flex-end;row-gap:4px;font-size:16px;line-height:1.3}
+.sheet .sh-seg{display:inline-grid;grid-template-rows:auto auto;white-space:pre}
+.sheet .sh-ch{font-family:var(--font-mono);font-weight:700;font-size:13px;color:var(--accent);background:none;border:0;padding:0 6px 0 0;cursor:pointer;justify-self:start;min-height:1.2em}
+.sheet .sh-ch:hover,.sheet .sh-ch[aria-pressed="true"]{text-decoration:underline}
+.sheet .sh-ch:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.sheet .sh-chords{display:flex;flex-wrap:wrap;gap:4px 10px}
+.sheet .sh-lyric{font-size:16px}
+.sheet .sh-tab{font-family:var(--font-mono);font-size:12px;white-space:pre;overflow-x:auto;color:var(--muted)}
+
+/* where the data comes from */
+.sources summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--muted)}
+.sources[open] summary{margin-bottom:8px}
+.src-list{display:grid;gap:6px;font-size:14px}
+.src-item{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
+.src-item .pill{font-size:11px}
+.src-item .ref{color:var(--muted);word-break:break-all}
+.src-conf{color:var(--special)}

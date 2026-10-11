@@ -1,0 +1,63 @@
+{
+  "plugin": "web",
+  "ref": "https://amp.kompas.com/hype/read/2021/10/26/102000466/lirik-dan-chord-lagu-money-for-nothing-dire-straits",
+  "fetched": "2026-10-10",
+  "confidence": "medium",
+  "fields": {
+    "name": "Money for Nothing",
+    "artist": "Dire Straits",
+    "lines": {
+      "Intro": [
+        [
+          "Gm",
+          "C",
+          "Gm",
+          "Bb",
+          "C",
+          "Gm",
+          "F",
+          "Gm"
+        ]
+      ],
+      "Verse": [
+        [
+          "Gm",
+          "C"
+        ],
+        [
+          "Gm",
+          "Bb",
+          "C"
+        ],
+        [
+          "Gm"
+        ],
+        [
+          "F",
+          "Gm"
+        ]
+      ],
+      "Chorus": [
+        [
+          "Eb",
+          "Bb"
+        ],
+        [
+          "Eb",
+          "F"
+        ],
+        [
+          "Gm"
+        ],
+        [
+          "C",
+          "D",
+          "E"
+        ]
+      ]
+    },
+    "notes": [
+      "The source spells Bb as A# and Eb as D#; GitBuzz uses flats."
+    ]
+  }
+}

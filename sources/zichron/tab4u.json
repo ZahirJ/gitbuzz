@@ -1,0 +1,66 @@
+{
+  "plugin": "tab4u",
+  "ref": "https://www.tab4u.com/tabs/songs/6116_%D7%90%D7%95%D7%A9%D7%99%D7%A7_%D7%9C%D7%95%D7%99_-_%D7%96%D7%9B%D7%A8%D7%95%D7%9F_%D7%99%D7%A2%D7%A7%D7%91.html",
+  "fetched": "2026-10-11",
+  "confidence": "high",
+  "fields": {
+    "name": "זכרון יעקב",
+    "artist": "אושיק לוי",
+    "credits": "מילים ולחן: נפתלי אלטר",
+    "lines": {
+      "Intro": [
+        [
+          "Am"
+        ]
+      ],
+      "Verse": [
+        [
+          "E",
+          "Dm"
+        ],
+        [
+          "F",
+          "Am"
+        ],
+        [
+          "Am",
+          "E",
+          "Dm"
+        ],
+        [
+          "E",
+          "Dm"
+        ],
+        [
+          "F",
+          "Am"
+        ],
+        [
+          "G",
+          "C",
+          "Am",
+          "E",
+          "Dm"
+        ]
+      ],
+      "Chorus": [
+        [
+          "C",
+          "G",
+          "Dm",
+          "C"
+        ],
+        [
+          "Am",
+          "G",
+          "Dm",
+          "C"
+        ]
+      ]
+    },
+    "notes": [
+      "Tab4U does not label the refrain; GitBuzz calls it Chorus.",
+      "Tab4U shows chords only for the first verse and the refrain; later verses repeat them."
+    ]
+  }
+}

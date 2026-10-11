@@ -1,0 +1,144 @@
+{
+  "plugin": "tab4u",
+  "ref": "https://www.tab4u.com/tabs/songs/1886_%D7%9E%D7%95%D7%A0%D7%99%D7%A7%D7%94_%D7%A1%D7%A7%D7%A1_-_%D7%9E%D7%9B%D7%94_%D7%90%D7%A4%D7%95%D7%A8%D7%94.html",
+  "fetched": "2026-10-10",
+  "confidence": "high",
+  "fields": {
+    "name": "מכה אפורה",
+    "artist": "מוניקה סקס",
+    "credits": "מילים ולחן: יהלי סובול",
+    "lines": {
+      "Verse": [
+        [
+          "D",
+          "Bm"
+        ],
+        [
+          "A",
+          "G"
+        ],
+        [
+          "D",
+          "Bm"
+        ],
+        [
+          "G"
+        ],
+        [
+          "A/F#",
+          "G",
+          "D",
+          "Bm",
+          "A/F#"
+        ],
+        [
+          "D",
+          "Bm"
+        ],
+        [
+          "A",
+          "G"
+        ],
+        [
+          "D",
+          "Bm"
+        ],
+        [
+          "A/F#",
+          "G"
+        ],
+        [
+          "D",
+          "Bm"
+        ],
+        [
+          "A/F#",
+          "G"
+        ],
+        [
+          "D",
+          "Bm"
+        ],
+        [
+          "A/F#",
+          "G"
+        ],
+        [
+          "G",
+          "D",
+          "Bm"
+        ],
+        [
+          "D",
+          "A"
+        ]
+      ],
+      "Chorus": [
+        [
+          "Em",
+          "A"
+        ],
+        [
+          "Bm",
+          "G"
+        ],
+        [
+          "Em",
+          "A"
+        ],
+        [
+          "D",
+          "D4",
+          "D",
+          "G"
+        ],
+        [
+          "Em",
+          "A"
+        ],
+        [
+          "D",
+          "D4",
+          "D",
+          "G"
+        ],
+        [
+          "Em",
+          "A"
+        ],
+        [
+          "Bm",
+          "G"
+        ]
+      ],
+      "Interlude": [
+        [
+          "Bm",
+          "A",
+          "G",
+          "A/F#",
+          "Bm",
+          "A",
+          "G",
+          "A/F#"
+        ]
+      ],
+      "Outro": [
+        [
+          "D",
+          "G",
+          "D",
+          "A"
+        ]
+      ]
+    },
+    "hasTab": [
+      "Intro",
+      "Outro"
+    ],
+    "notes": [
+      "Tab4U writes the verse as D Bm A G; the recording plays D G A/F# Bm (see the audio record).",
+      "Tab4U has a guitar tab for the intro and ending; open the Tab4U page to see it."
+    ]
+  }
+}

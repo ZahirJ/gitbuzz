@@ -10,7 +10,8 @@ GitBuzz is a single-page web app for learning electric guitar soloing over songs
 - **Licks.** Four original licks per song, with tab and rhythm. Each one plays over its chords while the board lights up the notes in order.
 - **Chord color.** For each chord, the add9, sus4, maj7 and 7 notes, and whether each fits the key.
 - **Missions.** A checklist of practice goals for each song.
-- **Add your own songs.** Paste chords from Ultimate Guitar or Tab4U.
+- **Add songs from a link or a pasted page.** Paste a Tab4U or Ultimate Guitar page and GitBuzz finds the name, artist, sections and chords, guesses the key, and places the chords over the lyrics in a **Song sheet** (tap a chord to see it on the board). The lyrics stay in your browser.
+- **Where the data comes from.** Each song lists its sources (chord pages, recordings, hand-curated content), what each one supplied, and where they disagree.
 
 ## Songs included
 
@@ -21,7 +22,7 @@ GitBuzz is a single-page web app for learning electric guitar soloing over songs
 | Money for Nothing | Dire Straits | G minor (Dorian) | 135 bpm | Published lesson sheet, not yet measured |
 | זכרון יעקב | אושיק לוי | A minor | 100 bpm | Starting guess, not yet measured |
 
-Chord charts come from Tab4U and public chord sheets. GitBuzz stores chords only. Lyrics stay on Tab4U, and each song links to its Tab4U page. For מכה אפורה, the verse order was corrected to match the recording. The licks are original, not transcriptions of the recorded solos.
+Each song is merged from several sources: chord pages, measured recordings and hand-curated teaching content. The repo stores chords only. Lyrics stay on the source sites, or in your own browser if you paste a page. For מכה אפורה, the verse order was corrected to match the recording. The licks are original, not transcriptions of the recorded solos.
 
 ## Running it
 
@@ -31,29 +32,34 @@ Your progress (missions, added songs, last song) is saved in your browser's loca
 
 ## Project structure
 
+GitBuzz has three layers: sources → records → merged songs → app. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) explains the design.
+
 ```
-index.html            page markup; loads the scripts below in order
-css/gitbuzz.css       all styles (light and dark themes)
-js/theory.js          music theory: chord parsing, keys, scales, pentatonic boxes (pure, no DOM)
-js/notation.js        text tabs for the guide and licks (pure)
-js/audio.js           Web Audio synth: notes, click, chord stabs, bass, bends/slides/vibrato
-js/songs.js           song registry: GitBuzz.registerSong()
-songs/*.js            one data file per song: chords, key, tempo, missions, guide notes, licks
-js/app.js             UI, state, loop and lick players, the add-a-song form
-tools/validate-songs.js   checks every song file (run with node)
-tools/bundle.py       builds dist/gitbuzz.html, a single self-contained file
+sources/<id>/*.json       one record per source per song: tab4u, ultimate-guitar, web, audio, manual
+js/merge.js               superposition: combines records field by field, with provenance and conflicts
+tools/merge-song.js       runs the merge → songs/<id>.js (generated; don't edit by hand)
+js/ingest/                in-app paste plugins (Tab4U, Ultimate Guitar, generic) + the chord-sheet engine
+.claude/skills/           Claude-side plugins: add-song-by-url (router), ingest-tab4u, ingest-ultimate-guitar,
+                          ingest-audio, ingest-web
+tools/analyze-audio.py    measures tempo, tuning, key and per-bar chords from a recording
+js/theory.js              chord parsing, keys, scales, boxes, key guessing (pure)
+js/notation.js            text tabs (pure)
+js/audio.js               Web Audio synth
+js/songs.js               song registry
+js/app.js                 UI, state, players, import, song sheet
+css/gitbuzz.css           styles
+tools/validate-songs.js   checks songs and records (including: no lyrics in the repo)
+tools/bundle.py           builds dist/gitbuzz.html, one self-contained file
+tools/fixtures/           invented sample pages for testing the paste plugins
 ```
 
-The scripts are plain (non-module) scripts that share one `window.GitBuzz` namespace. That keeps the page working when you double-click `index.html`, which ES modules don't allow. Core code never refers to a specific song: everything song-specific lives in `songs/`.
+The scripts are plain (non-module) scripts sharing one `window.GitBuzz` namespace, so `index.html` works when opened straight from disk. Core code never refers to a specific song.
 
 ## Adding songs
 
-See [`songs/README.md`](songs/README.md) for the song file format. In short:
-1. Add `songs/<slug>.js`.
-2. Add one `<script>` line in `index.html` above `<!-- @songs-end -->`.
-3. Run `node tools/validate-songs.js`.
-
-With Claude, the `add-tab4u-song` skill does all of this from a Tab4U link.
+- **In the app:** paste a song page under **Add a song**. The song is saved in your browser only.
+- **For the shared song list:** give Claude a link, an audio file or a song name, and the `add-song-by-url` skill does the rest. It adds a record under `sources/<id>/`, merges, validates and commits.
+- **By hand:** write a record (see [`songs/README.md`](songs/README.md)), then run `node tools/merge-song.js <id>` and `node tools/validate-songs.js`.
 
 ## Single-file version
 

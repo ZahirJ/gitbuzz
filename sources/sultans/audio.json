@@ -1,0 +1,55 @@
+{
+  "plugin": "audio",
+  "ref": "Dire Straits - Sultans Of Swing (Official Music Video).mp3",
+  "fetched": "2026-10-11",
+  "confidence": "high",
+  "fields": {
+    "bpm": 149,
+    "tuningCents": 12,
+    "key": {
+      "tonic": 2,
+      "mode": "minor"
+    },
+    "sections": {
+      "Verse": [
+        [
+          "Dm",
+          4
+        ],
+        [
+          "C",
+          2
+        ],
+        [
+          "Bb",
+          2
+        ],
+        [
+          "A",
+          8
+        ]
+      ],
+      "Chorus": [
+        [
+          "F",
+          8
+        ],
+        [
+          "C",
+          8
+        ],
+        [
+          "Bb",
+          8
+        ],
+        [
+          "Dm",
+          8
+        ]
+      ]
+    },
+    "notes": [
+      "Official-video edit (4:26). The beat tracker first read 99 bpm, the 3:2 dotted feel; the quarter-note pulse is 149."
+    ]
+  }
+}

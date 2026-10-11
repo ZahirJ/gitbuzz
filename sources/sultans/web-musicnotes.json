@@ -1,0 +1,13 @@
+{
+  "plugin": "web",
+  "ref": "https://www.musicnotes.com/sheetmusic/dire-straits/sultans-of-swing/MN0087011",
+  "fetched": "2026-10-10",
+  "confidence": "medium",
+  "fields": {
+    "key": {
+      "tonic": 2,
+      "mode": "minor"
+    },
+    "bpm": 146
+  }
+}

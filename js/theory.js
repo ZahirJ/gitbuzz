@@ -88,8 +88,43 @@
   /** Pitch class at a string/fret position. */
   function pcAt(string, fret) { return (OPEN[string] + fret) % 12; }
 
+  /* Diatonic chords per mode as [interval from tonic, 'M' major | 'm' minor]. Minor includes V major (harmonic minor). */
+  const DIATONIC = {
+    major:  [[0,'M'],[2,'m'],[4,'m'],[5,'M'],[7,'M'],[9,'m']],
+    minor:  [[0,'m'],[3,'M'],[5,'m'],[7,'m'],[7,'M'],[8,'M'],[10,'M']],
+    dorian: [[0,'m'],[2,'m'],[3,'M'],[5,'M'],[7,'m'],[10,'M']]
+  };
+
+  /** Guess the key from chord symbols. Returns {tonic, mode, score, runnerUp, confident}.
+      Each chord scores 1 if diatonic to the key (sus/power chords match on the root only, worth 0.5).
+      The first and last chords add 1.5 each when they are the tonic chord, which breaks relative-key ties. */
+  function guessKey(chords) {
+    const parsed = chords.map(c => (typeof c === 'string' ? parseChord(c) : c)).filter(Boolean);
+    if (!parsed.length) return null;
+    const quality = ch => (ch.iv.includes(3) ? 'm' : ch.iv.includes(4) ? 'M' : null);
+    const results = [];
+    for (let tonic = 0; tonic < 12; tonic++) {
+      for (const mode of ['major', 'minor', 'dorian']) {
+        let score = 0;
+        parsed.forEach(ch => {
+          const rel = mod12(ch.root - tonic), q = quality(ch);
+          if (DIATONIC[mode].some(([r, dq]) => r === rel && (q === null || dq === q))) score += q === null ? 0.5 : 1;
+        });
+        const tonicQ = mode === 'major' ? 'M' : 'm';
+        const isTonic = ch => ch.root === tonic && (quality(ch) === null || quality(ch) === tonicQ);
+        if (isTonic(parsed[0])) score += 1.5;
+        if (isTonic(parsed[parsed.length - 1])) score += 1.5;
+        if (mode === 'dorian') score -= 0.25; // prefer plain minor unless Dorian chords really are there
+        results.push({ tonic, mode, score });
+      }
+    }
+    results.sort((a, b) => b.score - a.score);
+    const [best, next] = results;
+    return { tonic: best.tonic, mode: best.mode, score: best.score, runnerUp: next, confident: best.score - next.score >= 1 };
+  }
+
   const api = { SHARP, MIXED, IVL, SCALES, MODES, OPEN, STRING_NAMES, FRETS, LETTER,
-    mod12, hz, pcOf, parseChord, useFlats, noteName, keyName, keyData, boxCells, pcAt };
+    mod12, hz, pcOf, parseChord, useFlats, noteName, keyName, keyData, boxCells, pcAt, guessKey };
   root.GitBuzz = root.GitBuzz || {};
   root.GitBuzz.theory = api;
   if (typeof module !== 'undefined') module.exports = api;

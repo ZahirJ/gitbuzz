@@ -30,7 +30,7 @@ function renderSongs(){
     b.innerHTML=`<span class="t" dir="auto"></span><span class="a" dir="auto"></span><span class="k"></span>`;
     b.querySelector('.t').textContent=s.name;b.querySelector('.a').textContent=s.artist||'';
     b.querySelector('.k').textContent=keyName(s);
-    b.onclick=()=>{stop();S.lick=null;$('lickNow').hidden=true;S.song=s.id;store.set('nn-song',s.id);S.section=Object.keys(s.sections)[0];S.idx=0;S.bpm=null;S.colorIv=null;renderAll()};
+    b.onclick=()=>{stop();S.lick=null;S.sheetChord=null;$('lickNow').hidden=true;S.song=s.id;store.set('nn-song',s.id);S.section=Object.keys(s.sections)[0];S.idx=0;S.bpm=null;S.colorIv=null;renderAll()};
     el.appendChild(b);
   });
   const a=document.createElement('button');a.className='song add';a.innerHTML='<span class="t">+ Add a song</span><span class="a">Paste chords from your tabs</span>';
@@ -42,7 +42,7 @@ function renderSections(){
   const el=$('sections');el.innerHTML='';
   Object.keys(song().sections).forEach(k=>{
     const b=document.createElement('button');b.textContent=k;b.setAttribute('aria-pressed',k===S.section);
-    b.onclick=()=>{clearLick();S.section=k;S.idx=0;S.colorIv=null;if(S.playing){restartLoop()}renderAll()};el.appendChild(b);
+    b.onclick=()=>{clearLick();S.sheetChord=null;S.section=k;S.idx=0;S.colorIv=null;if(S.playing){restartLoop()}renderAll()};el.appendChild(b);
   });
 }
 function renderStrip(){
@@ -50,7 +50,7 @@ function renderStrip(){
   prog().forEach(([c,b],i)=>{
     const x=document.createElement('button');x.className='chip';x.setAttribute('aria-current',i===S.idx);
     x.innerHTML=`<span></span><small>${b} beats</small>`;x.firstChild.textContent=c;
-    x.onclick=()=>{S.idx=i;S.colorIv=null;renderChordDependent()};el.appendChild(x);
+    x.onclick=()=>{S.idx=i;S.colorIv=null;S.sheetChord=null;renderChordDependent();renderSheetPressed()};el.appendChild(x);
   });
   const p=prog();const cur=p[S.idx][0];const nxt=p[(S.idx+1)%p.length][0];
   $('cur').textContent=cur;$('nxt').textContent='next: '+nxt;
@@ -73,7 +73,7 @@ function renderControls(){
   const all=document.createElement('button');all.textContent='Whole neck';all.setAttribute('aria-pressed',S.box===0);all.onclick=()=>{clearLick();S.box=0;renderControls();renderBoard();renderTab()};el.appendChild(all);
   for(let k=1;k<=5;k++){const bx=boxCells(k);const b=document.createElement('button');b.textContent=`Box ${k} · fr ${bx.start}`;b.setAttribute('aria-pressed',S.box===k);b.onclick=()=>{clearLick();S.box=k;renderControls();renderBoard();renderTab()};el.appendChild(b)}
 }
-function currentChord(){return parseChord(prog()[S.idx][0])||parseChord('C')}
+function currentChord(){if(S.sheetChord)return parseChord(GB.chordsheet.readChord(S.sheetChord)||'C');return parseChord(prog()[S.idx][0])||parseChord('C')}
 
 function renderBoard(){
   const kd=keyData();const ch=currentChord();
@@ -140,7 +140,7 @@ function renderBoard(){
   $('board').innerHTML=o;
   const s=song();
   $('keyInfo').textContent=s.mode==='major'?`Key ${nm(s.tonic)} major · ${nm(kd.minorRoot)} minor pentatonic = ${nm(s.tonic)} major pentatonic`:`Key ${keyName(s)} · ${nm(kd.minorRoot)} minor pentatonic`;
-  $('boardTitle').textContent=(S.scale==='pent'?'Pentatonic':'Full scale')+(S.box?` · Box ${S.box}`:' · whole neck');
+  $('boardTitle').textContent=(S.scale==='pent'?'Pentatonic':'Full scale')+(S.box?` · Box ${S.box}`:' · whole neck');if(S.sheetChord)$('boardTitle').textContent+=' · '+S.sheetChord+' from the sheet';
 }
 function renderTab(){
   if(!S.box){$('tabBlock').hidden=true;return}$('tabBlock').hidden=false;
@@ -200,7 +200,8 @@ function renderMissions(){
   const ln=$('links');ln.innerHTML='';
   (s.links||[['Find on Spotify','https://open.spotify.com/search/'+encodeURIComponent((s.artist||'')+' '+s.name)],['Search Ultimate Guitar','https://www.ultimate-guitar.com/search.php?search_type=title&value='+encodeURIComponent(s.name)]]).forEach(([t,u])=>{const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';a.textContent=t+' ↗';ln.appendChild(a)});
   if(s.custom){const del=document.createElement('button');del.className='btn';del.type='button';del.textContent='Remove this song';
-    del.onclick=()=>{if(del.dataset.armed){custom=custom.filter(c=>c.id!==s.id);store.set('nn-songs',custom);S.song='maka';renderAll()}else{del.dataset.armed='1';del.textContent='Tap again to remove'}};ln.appendChild(del)}
+    del.onclick=()=>{if(del.dataset.armed){custom=custom.filter(c=>c.id!==s.id);store.set('nn-songs',custom);delete sheets[s.id];store.set('gb-sheets',sheets);S.song=GB.songs[0].id;renderAll()}else{del.dataset.armed='1';del.textContent='Tap again to remove'}};ln.appendChild(del)}
+  renderSources();
 }
 function guideFor(s){
   if(s.guide)return s.guide;
@@ -287,7 +288,7 @@ function playLick(L,scroll){
 }
 function renderChordDependent(){renderStrip();renderBoard();renderColor();
   document.querySelectorAll('#beats i').forEach(i=>i.classList.remove('on'))}
-function renderAll(){renderSongs();renderSections();renderTransport();renderStrip();renderControls();renderBoard();renderTab();renderColor();renderGuide();renderLicks();renderMissions()}
+function renderAll(){renderSongs();renderSections();renderTransport();renderStrip();renderControls();renderBoard();renderTab();renderColor();renderGuide();renderLicks();renderMissions();renderSheet()}
 
 /* ---------- loop player ---------- */
 let timer=null,nextTime=0,beat=0,flat=[];
@@ -303,7 +304,7 @@ function schedule(){
     nextTime+=spb;beat++;
   }
 }
-function start(){if(!A.ensure())return;if(S.lick){clearLick();renderBoard()}buildFlat();beat=flat.findIndex(f=>f.i===S.idx&&f.k===0);if(beat<0)beat=0;nextTime=A.now()+.08;S.playing=true;timer=setInterval(schedule,25);schedule();renderTransport()}
+function start(){if(!A.ensure())return;if(S.sheetChord){S.sheetChord=null;renderSheetPressed()}if(S.lick){clearLick();renderBoard()}buildFlat();beat=flat.findIndex(f=>f.i===S.idx&&f.k===0);if(beat<0)beat=0;nextTime=A.now()+.08;S.playing=true;timer=setInterval(schedule,25);schedule();renderTransport()}
 function stop(){stopLick();S.playing=false;clearInterval(timer);timer=null;renderTransport();document.querySelectorAll('#beats i').forEach(i=>i.classList.remove('on'))}
 function restartLoop(){stop();S.idx=0;start()}
 
@@ -328,7 +329,123 @@ $('addForm').addEventListener('submit',e=>{e.preventDefault();const err=$('fErr'
   e.target.reset();renderAll();window.scrollTo({top:0,behavior:'smooth'});
 });
 
-if(!allSongs().some(s=>s.id===S.song))S.song='maka';
+
+/* ---------- song sheet: chords over lyrics; lyrics stay in this browser ---------- */
+let sheets=store.get('gb-sheets',{});
+const today=()=>new Date().toISOString().slice(0,10);
+function renderSheet(){
+  const s=song(),sh=sheets[s.id],box=$('sheet');
+  $('sheetEmpty').hidden=!!sh;box.hidden=!sh;$('sheetTools').hidden=!sh;
+  $('sheetFrom').textContent=sh?`From your pasted ${sh.from}, ${sh.added}`:'';
+  box.innerHTML='';if(!sh)return;
+  if(sh.rtl===undefined)sh.rtl=sh.sheet.some(it=>it.kind==='line'&&/[\u0590-\u05FF]/.test(it.segs.map(x=>x.text).join('')));
+  box.dir=sh.rtl?'rtl':'ltr';
+  const btn=c=>{const b=document.createElement('button');b.type='button';b.className='sh-ch';b.textContent=c||'';
+    if(c){b.dataset.chord=c;b.setAttribute('aria-pressed',String(S.sheetChord===c))}else{b.disabled=true;b.tabIndex=-1}return b};
+  sh.sheet.forEach(it=>{
+    let el=document.createElement('div');
+    if(it.kind==='header'){el.className='sh-head';el.textContent=it.name;if(it.inferred){const i=document.createElement('i');i.textContent=' · guessed';el.appendChild(i)}}
+    else if(it.kind==='line'){el.className='sh-line';el.dir=/[\u0590-\u05FF\u0600-\u06FF]/.test(it.segs.map(x=>x.text).join(''))?'rtl':'ltr';
+      it.segs.forEach(sg=>{const seg=document.createElement('span');seg.className='sh-seg';const t=document.createElement('span');t.textContent=sg.text;seg.append(btn(sg.chord),t);el.appendChild(seg)})}
+    else if(it.kind==='chords'){el.className='sh-chords';el.dir=sh.rtl?'rtl':'ltr';it.chords.forEach(c=>el.appendChild(btn(c)))}
+    else if(it.kind==='tab'){el.className='sh-tab';el.dir='ltr';el.textContent=it.text}
+    else if(it.kind==='lyric'){el.className='sh-lyric';el.dir='auto';el.textContent=it.text}
+    else return;
+    box.appendChild(el)});
+}
+function renderSheetPressed(){document.querySelectorAll('#sheet .sh-ch[data-chord]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.chord===S.sheetChord)))}
+$('sheet').addEventListener('click',e=>{const b=e.target.closest('.sh-ch[data-chord]');if(!b)return;
+  if(S.playing)stop();clearLick();S.sheetChord=b.dataset.chord;S.colorIv=null;$('cur').textContent=S.sheetChord;$('nxt').textContent='from the sheet';
+  renderBoard();renderColor();renderSheetPressed();
+  const ch=parseChord(GB.chordsheet.readChord(S.sheetChord)||'');if(ch&&A.ensure())A.stab(ch,A.now()+.02,.9)});
+$('sheetRemove').onclick=()=>{const b=$('sheetRemove');if(b.dataset.armed){delete sheets[song().id];store.set('gb-sheets',sheets);delete b.dataset.armed;b.textContent='Remove the lyrics from this browser';S.sheetChord=null;renderSheet();renderBoard();renderSources()}else{b.dataset.armed='1';b.textContent='Tap again to remove'}};
+$('sheetGoAdd').onclick=e=>{e.preventDefault();$('addPanel').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$('impText').focus(),400)};
+
+/* ---------- where the data comes from (provenance from the merge) ---------- */
+const SRC_NAME={'tab4u':'Tab4U','ultimate-guitar':'Ultimate Guitar','web':'Web chord sheet','audio':'Recording','paste':'Pasted page','manual':'GitBuzz (by hand)'};
+const FIELD_NAME={name:'name',artist:'artist',credits:'credits',key:'key',bpm:'tempo',missions:'missions',guide:'guide notes',licks:'licks',tempoNote:'tempo note'};
+function renderSources(){
+  const s=song(),list=$('sourcesList'),srcs=s.sources||[],sh=sheets[s.id];
+  $('sourcesBox').hidden=!srcs.length&&!sh;list.innerHTML='';
+  const wrap=document.createElement('div');wrap.className='src-list';
+  const prov=s.provenance||{};
+  const seen=new Set();
+  srcs.forEach(src=>{
+    const gave=Object.entries(prov).filter(([k,v])=>k!=='sections'&&v===src.plugin).map(([k])=>FIELD_NAME[k]||k);
+    Object.entries(prov.sections||{}).forEach(([sec,v])=>{if(v.split(':')[0]===src.plugin)gave.push(sec+' chords'+(v===src.plugin&&src.plugin==='audio'?' (timed)':''))});
+    const key=src.plugin+'|'+src.ref;if(seen.has(key))return;seen.add(key);
+    const row=document.createElement('div');row.className='src-item';
+    const p=document.createElement('span');p.className='pill in';p.textContent=SRC_NAME[src.plugin]||src.plugin;row.appendChild(p);
+    const ref=document.createElement(/^https:\/\//.test(src.ref)?'a':'span');ref.className='ref';ref.textContent=src.ref.replace(/^https:\/\/(www\.)?/,'').slice(0,70);if(ref.tagName==='A'){ref.href=src.ref;ref.target='_blank';ref.rel='noopener'}row.appendChild(ref);
+    const g=document.createElement('span');g.textContent=gave.length?'gave '+[...new Set(gave)].join(', '):'(cross-check only)';row.appendChild(g);
+    wrap.appendChild(row)});
+  if(prov.key==='guessed from chords'){const r=document.createElement('div');r.className='src-item';r.textContent='Key: guessed from the chords.';wrap.appendChild(r)}
+  if(prov.bpm==='default'){const r=document.createElement('div');r.className='src-item';r.textContent='Tempo: no source yet, so 100 bpm is a starting guess.';wrap.appendChild(r)}
+  if(sh){const r=document.createElement('div');r.className='src-item';const p=document.createElement('span');p.className='pill';p.textContent='Lyrics';r.append(p,document.createTextNode(`your pasted ${sh.from}, kept in this browser only`));wrap.appendChild(r)}
+  (s.conflicts||[]).forEach(c=>{const r=document.createElement('div');r.className='src-item src-conf';r.textContent=`Sources disagree on ${FIELD_NAME[c.field]||c.field}: used ${SRC_NAME[c.chosen]||c.chosen} (${c.value}), ${SRC_NAME[c.other]||c.other} says ${c.otherValue}.`;wrap.appendChild(r)});
+  (s.notes||[]).forEach(n=>{const r=document.createElement('div');r.className='src-item note';r.dir='auto';r.textContent=n;wrap.appendChild(r)});
+  list.appendChild(wrap);
+}
+
+/* ---------- add a song from a link or a pasted page ---------- */
+SHARP.forEach((n,i)=>{const o=document.createElement('option');o.value=i;o.textContent=MIXED[i]===n?n:n+' / '+MIXED[i];$('impRoot').appendChild(o)});
+const URL_HINT={
+  'tab4u':'This is a Tab4U page. Open it, select the whole page, copy it, and paste it below. Or copy the request for Claude, which reads the chords for the shared song list and can measure the tempo from a recording.',
+  'ultimate-guitar':'This is an Ultimate Guitar page. Open it, select the whole page, copy it, and paste it below. Pro and Official tabs are interactive players, so only regular chord pages can be read. Or copy the request for Claude.',
+  'audio':'This is an audio file. The browser can’t analyze audio here. Copy the request for Claude, which measures the tempo, tuning, key and chord timing and merges them into the song.',
+  'web':'GitBuzz will try to read chords over lyrics from any chord page. Open it, copy the whole page, and paste it below, or copy the request for Claude.'
+};
+function updateUrlHint(){
+  const url=$('impUrl').value.trim(),route=GB.ingest.routeUrl(url);
+  $('impUrlHint').hidden=!route;if(!route)return;
+  $('impUrlText').textContent=URL_HINT[route.id]||URL_HINT.web;
+  const open=$('impUrlOpen');open.hidden=!/^https:\/\//i.test(url);open.href=/^https:\/\//i.test(url)?url:'#';
+  $('impAsk').textContent='Add this song to GitBuzz with the add-song-by-url skill: '+url;$('impAskMsg').textContent='';
+}
+$('impUrl').addEventListener('input',updateUrlHint);
+$('impAskCopy').onclick=()=>{const t=$('impAsk').textContent,msg=$('impAskMsg');
+  const sel=()=>{const r=document.createRange();r.selectNodeContents($('impAsk'));const w=getSelection();w.removeAllRanges();w.addRange(r);msg.textContent='Selected. Press Ctrl+C or ⌘C to copy.'};
+  try{navigator.clipboard.writeText(t).then(()=>{msg.textContent='Copied. Paste it to Claude.'},sel)}catch(e){sel()}};
+let pending=null;
+$('impRead').onclick=()=>{
+  const err=$('impErr');err.textContent='';$('impPreview').hidden=true;pending=null;
+  const text=$('impText').value;
+  if(!text.trim()){err.textContent='Paste the song page first.';return}
+  let res;try{res=GB.ingest.parse(text)}catch(e){err.textContent='Could not read the page: '+e.message;return}
+  const st=res.stats;
+  if(!st.chordLines){err.textContent='No chord lines found. Copy the whole song page, including the chords shown above the lyrics.';return}
+  const pv=GB.merge.mergeRecords('preview',[res.record]);
+  pending={res,pv};
+  $('impFound').textContent=`Read as a ${res.pluginLabel}. Found ${st.sections.length} section${st.sections.length===1?'':'s'} and ${st.chordLines} chord lines; ${st.matchedLines} of them are matched to lyric lines`+(st.tabLines?`, plus ${st.tabLines} tab lines`:'')+'.'+(st.inferred.length?` Unlabeled parts were named by guess: ${st.inferred.join(', ')}.`:'');
+  $('impName').value=res.record.fields.name||'';$('impArtist').value=res.record.fields.artist||'';
+  $('impRoot').value=pv.tonic;$('impMode').value=pv.mode;
+  $('impKeyNote').textContent=(pv.provenance.key==='paste'?'Key as written on the page.':'Key guessed from the chords.')+' '+pv.notes.filter(n=>/^Key/.test(n)).join(' ');
+  const secs=$('impSections');secs.innerHTML='';
+  Object.entries(pv.sections).forEach(([name,prog])=>{const r=document.createElement('div');r.className='imp-sec';const b=document.createElement('b');b.textContent=name;r.appendChild(b);
+    prog.forEach(([c])=>{const x=document.createElement('span');x.className='c';x.textContent=c;r.appendChild(x)});secs.appendChild(r)});
+  const tgt=$('impTarget');tgt.innerHTML='';const norm=x=>String(x||'').replace(/[^\p{L}\p{N}]+/gu,'').toLowerCase();
+  let match=allSongs().find(s=>norm(s.name)&&norm(s.name)===norm(res.record.fields.name));
+  allSongs().forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.name;tgt.appendChild(o)});
+  tgt.value=(match||song()).id;
+  $('impPreview').hidden=false;$('impPreview').scrollIntoView({behavior:'smooth',block:'nearest'});
+};
+function saveSheet(id){sheets[id]={sheet:pending.res.sheet,from:pending.res.pluginLabel,added:today()};store.set('gb-sheets',sheets)}
+function selectSong(id){stop();S.lick=null;S.sheetChord=null;S.song=id;store.set('nn-song',id);const s=song();S.section=Object.keys(s.sections)[0];S.idx=0;S.bpm=null;S.colorIv=null;renderAll()}
+$('impAdd').onclick=()=>{
+  if(!pending)return;const err=$('impErr');err.textContent='';
+  const name=$('impName').value.trim();if(!name){err.textContent='Add a song name so you can find it again.';return}
+  const f=pending.res.record.fields,edits={};
+  if(name!==(f.name||''))edits.name=name;
+  const artist=$('impArtist').value.trim();if(artist!==(f.artist||''))edits.artist=artist;
+  const key={tonic:+$('impRoot').value,mode:$('impMode').value};if(key.tonic!==pending.pv.tonic||key.mode!==pending.pv.mode)edits.key=key;
+  const records=[pending.res.record];if(Object.keys(edits).length)records.push({plugin:'manual',ref:'edited in GitBuzz',fetched:today(),confidence:'high',fields:edits});
+  const id='u'+Date.now();const s=GB.merge.mergeRecords(id,records);s.custom=true;
+  custom.push(s);store.set('nn-songs',custom);saveSheet(id);
+  $('impText').value='';$('impPreview').hidden=true;pending=null;selectSong(id);window.scrollTo({top:0,behavior:'smooth'});
+};
+$('impAttach').onclick=()=>{if(!pending)return;const id=$('impTarget').value;saveSheet(id);$('impText').value='';$('impPreview').hidden=true;pending=null;selectSong(id);$('sheetPanel').scrollIntoView({behavior:'smooth',block:'start'})};
+
+if(!allSongs().some(s=>s.id===S.song))S.song=GB.songs[0].id;
 S.section=Object.keys(song().sections)[0];
 renderAll();
 })();
