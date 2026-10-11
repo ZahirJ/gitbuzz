@@ -25,13 +25,39 @@ Chord charts come from Tab4U and public chord sheets. GitBuzz stores chords only
 
 ## Running it
 
-GitBuzz is one self-contained file, `index.html`. Open it in any modern browser; it needs no build step and no server. Fonts load from Google Fonts, and the page falls back to system fonts when offline.
+Open `index.html` in any modern browser. It needs no build step and no server, and it also works when opened straight from disk. Fonts load from Google Fonts, and the page falls back to system fonts when offline.
 
 Your progress (missions, added songs, last song) is saved in your browser's local storage.
 
+## Project structure
+
+```
+index.html            page markup; loads the scripts below in order
+css/gitbuzz.css       all styles (light and dark themes)
+js/theory.js          music theory: chord parsing, keys, scales, pentatonic boxes (pure, no DOM)
+js/notation.js        text tabs for the guide and licks (pure)
+js/audio.js           Web Audio synth: notes, click, chord stabs, bass, bends/slides/vibrato
+js/songs.js           song registry: GitBuzz.registerSong()
+songs/*.js            one data file per song: chords, key, tempo, missions, guide notes, licks
+js/app.js             UI, state, loop and lick players, the add-a-song form
+tools/validate-songs.js   checks every song file (run with node)
+tools/bundle.py       builds dist/gitbuzz.html, a single self-contained file
+```
+
+The scripts are plain (non-module) scripts that share one `window.GitBuzz` namespace. That keeps the page working when you double-click `index.html`, which ES modules don't allow. Core code never refers to a specific song: everything song-specific lives in `songs/`.
+
 ## Adding songs
 
-Songs are defined in the `BUILTIN` array in `index.html`. New songs go just above the `/* @songs-end */` marker. With Claude, the `add-tab4u-song` skill does this from a Tab4U link: it reads the chords, works out the key, adds the song, and commits.
+See [`songs/README.md`](songs/README.md) for the song file format. In short:
+1. Add `songs/<slug>.js`.
+2. Add one `<script>` line in `index.html` above `<!-- @songs-end -->`.
+3. Run `node tools/validate-songs.js`.
+
+With Claude, the `add-tab4u-song` skill does all of this from a Tab4U link.
+
+## Single-file version
+
+`python3 tools/bundle.py` writes `dist/gitbuzz.html`, with every file inlined. It's handy for sending GitBuzz to someone as one file. `dist/` is not committed.
 
 ## Roadmap ideas
 

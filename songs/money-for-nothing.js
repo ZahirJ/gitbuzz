@@ -1,0 +1,70 @@
+/* GitBuzz song: Money for Nothing — Dire Straits
+   Chords and structure only. Lyrics stay on the source site (see links). */
+GitBuzz.registerSong({
+  id: 'money',
+  name: 'Money for Nothing',
+  artist: 'Dire Straits',
+  tonic: 7,
+  mode: 'dorian',
+  bpm: 135,
+  tempoNote: '135 bpm comes from a published lesson sheet (Guitar Alliance). Chord lengths are simplified.',
+  sections: {
+    Verse: [['Gm7', 4], ['C', 4], ['Gm7', 4], ['Bb', 2], ['C', 2], ['Gm7', 4], ['Gm7', 4], ['F', 2], ['Gm7', 2]],
+    Chorus: [['Eb', 4], ['Bb', 4], ['Eb', 4], ['F', 4], ['Gm', 4], ['C', 4], ['D', 2], ['E', 2]]
+  },
+  links: [
+    ['Find on Spotify', 'https://open.spotify.com/search/Dire%20Straits%20Money%20for%20Nothing'],
+    ['Search Ultimate Guitar', 'https://www.ultimate-guitar.com/search.php?search_type=title&value=Money%20for%20Nothing']
+  ],
+  missions: [
+    ['Home box: G minor at fret 3', 'Loop the Verse with Box 1. This is the classic rock box. Bend the C (3rd string, fret 5) up toward D.'],
+    ['The C chord wants an E', 'Over C, the pink dot is E. It is not in the minor pentatonic, but it is in G Dorian, the scale this verse uses. Land on it when the C arrives.'],
+    ['Hear the chorus shift', 'In the Chorus the Eb chord brings an Eb note. Play E over the verse’s C, then Eb over the chorus’s Eb, and listen to how the mood changes.'],
+    ['Boxes 1 and 2', 'Move to Box 2 at fret 6 and play the same lick there. Then slide between the two boxes on the G string.'],
+    ['Add color', 'Over Gm7, add the A (the 9th) from the Color panel. Over C, try the sus4 and add9.']
+  ],
+  guide: {
+    targets: [['Gm7', 2, 5, 'G'], ['C', 3, 5, 'C'], ['Gm7', 3, 3, 'Bb'], ['Bb', 4, 3, 'D'], ['C', 3, 5, 'C']],
+    special: {
+      chordIdx: 1,
+      note: 'E',
+      pos: [4, 5],
+      text: 'Over C, play E on the B string at fret 5. It is not in the pentatonic box, but it is in G Dorian, the scale this verse uses. Go back to G or Bb when Gm7 returns.'
+    },
+    record: 'Play in the gaps between sung lines in the verse. The chorus changes key feel (Eb, Bb), so stay quiet there at first and just listen.'
+  },
+  licks: [
+    {
+      name: 'The classic bend',
+      lvl: 1,
+      where: 'Verse, Gm7 → C',
+      chords: [['Gm7', 4], ['C', 4]],
+      notes: [[3, 5, 2, 'b'], [3, 3, 1], [2, 5, 1], [3, 5, 2, 'v'], [null, null, 2]],
+      tip: 'Bend C up to D on the G string, the most-used rock bend there is. Then Bb and G, and land on C as the C chord arrives.'
+    },
+    {
+      name: 'The Dorian E',
+      lvl: 2,
+      where: 'Verse, Gm7 → C',
+      chords: [['Gm7', 4], ['C', 4]],
+      notes: [[5, 3, 1], [4, 6, 1], [4, 3, 2], [4, 5, 2, 's'], [3, 5, 2]],
+      tip: 'Slide from D up to E on the B string right as the C chord arrives. E is outside the pentatonic, but it is in this song’s scale, and it makes the C chord shine.'
+    },
+    {
+      name: 'Low-string answer',
+      lvl: 2,
+      where: 'Verse, Gm7 bars',
+      chords: [['Gm7', 4], ['Gm7', 4]],
+      notes: [[0, 3, 0.5], [0, 6, 0.5], [1, 3, 0.5], [1, 5, 1], [2, 3, 0.5], [2, 5, 1, 'v'], [null, null, 4]],
+      tip: 'The same box on the thick strings sounds like a riff. Mute the strings you’re not using with your picking hand, and play it with short, punchy notes.'
+    },
+    {
+      name: 'Push into C',
+      lvl: 3,
+      where: 'Verse, Bb → C → Gm7',
+      chords: [['Bb', 2], ['C', 2], ['Gm7', 4]],
+      notes: [[4, 3, 1], [4, 6, 1], [3, 3, 0.5], [3, 5, 1.5, 'h'], [2, 5, 4, 'v']],
+      tip: 'D and F belong to Bb. Over C, pick Bb and hammer onto C quickly, then land on G for the whole Gm7 bar.'
+    }
+  ]
+});
