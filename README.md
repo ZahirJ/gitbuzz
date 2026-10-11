@@ -21,6 +21,7 @@ GitBuzz is a single-page web app for learning electric guitar soloing over songs
 | Sultans of Swing | Dire Straits | D minor | 149 bpm | Measured from a recording (official video edit) |
 | Money for Nothing | Dire Straits | G minor (Dorian) | 135 bpm | Published lesson sheet, not yet measured |
 | זכרון יעקב | אושיק לוי | A minor | 100 bpm | Starting guess, not yet measured |
+| עירומים | שחר אבן צור | A major | 100 bpm | Starting guess, not yet measured |
 
 Each song is merged from several sources: chord pages, measured recordings and hand-curated teaching content. The repo stores chords only. Lyrics stay on the source sites, or in your own browser if you paste a page. For מכה אפורה, the verse order was corrected to match the recording. The licks are original, not transcriptions of the recorded solos.
 

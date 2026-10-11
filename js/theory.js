@@ -96,7 +96,8 @@
   };
 
   /** Guess the key from chord symbols. Returns {tonic, mode, score, runnerUp, confident}.
-      Each chord scores 1 if diatonic to the key (sus/power chords match on the root only, worth 0.5).
+      Each chord scores 1 if diatonic to the key (sus/power chords match on the root only, worth 0.5);
+      each 7th or added note outside the key's scale costs 0.75.
       The first and last chords add 1.5 each when they are the tonic chord, which breaks relative-key ties. */
   function guessKey(chords) {
     const parsed = chords.map(c => (typeof c === 'string' ? parseChord(c) : c)).filter(Boolean);
@@ -106,9 +107,12 @@
     for (let tonic = 0; tonic < 12; tonic++) {
       for (const mode of ['major', 'minor', 'dorian']) {
         let score = 0;
+        const scale = SCALES[mode].map(i => mod12(tonic + i));
         parsed.forEach(ch => {
           const rel = mod12(ch.root - tonic), q = quality(ch);
           if (DIATONIC[mode].some(([r, dq]) => r === rel && (q === null || dq === q))) score += q === null ? 0.5 : 1;
+          // 7ths and added notes: a tone outside the scale counts against the key (Amaj7's G# rules out D major)
+          ch.iv.slice(3).forEach(i => { if (!scale.includes(mod12(ch.root + i))) score -= 0.75; });
         });
         const tonicQ = mode === 'major' ? 'M' : 'm';
         const isTonic = ch => ch.root === tonic && (quality(ch) === null || quality(ch) === tonicQ);

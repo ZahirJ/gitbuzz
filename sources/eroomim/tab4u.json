@@ -1,0 +1,24 @@
+{
+  "plugin": "tab4u",
+  "ref": "https://www.tab4u.com/tabs/songs/2356_%D7%A9%D7%97%D7%A8_%D7%90%D7%91%D7%9F_%D7%A6%D7%95%D7%A8_-_%D7%A2%D7%99%D7%A8%D7%95%D7%9E%D7%99%D7%9D.html",
+  "fetched": "2026-10-11",
+  "confidence": "high",
+  "fields": {
+    "name": "עירומים",
+    "artist": "שחר אבן צור",
+    "credits": "מילים ולחן: שחר אבן צור",
+    "lines": {
+      "Intro": [["A", "Amaj7"], ["D", "Dm"]],
+      "Verse": [["D", "Amaj7", "A"], ["Dm"], ["D", "Amaj7", "A"], ["Dm"], ["Amaj7", "A"], ["Dm", "D"]],
+      "Chorus": [["Amaj7", "A"], ["Amaj7"], ["D"], ["Dm"], ["Amaj7", "A"], ["Amaj7"], ["D"], ["Dm"]],
+      "Interlude": [["D", "Dm", "A", "D"]],
+      "Outro": [["A", "Amaj7", "D", "Dm"], ["A/C#"]]
+    },
+    "hasTab": ["Intro"],
+    "notes": [
+      "Tab4U has a guitar tab for the intro; open the Tab4U page to see it.",
+      "The later chorus is written as A Amaj7 Dm D, a variation of the first chorus.",
+      "The interlude (מעבר) is a D Dm A D riff played 4 times; the outro repeats A Amaj7 D Dm 4 times and ends on A/C#."
+    ]
+  }
+}

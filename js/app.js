@@ -398,7 +398,7 @@ const URL_HINT={
 function updateUrlHint(){
   const url=$('impUrl').value.trim(),route=GB.ingest.routeUrl(url);
   $('impUrlHint').hidden=!route;if(!route)return;
-  $('impUrlText').textContent=URL_HINT[route.id]||URL_HINT.web;
+  $('impUrlText').textContent='GitBuzz can’t open links itself (browsers block one site from reading another), so there are two ways in. '+(URL_HINT[route.id]||URL_HINT.web);
   const open=$('impUrlOpen');open.hidden=!/^https:\/\//i.test(url);open.href=/^https:\/\//i.test(url)?url:'#';
   $('impAsk').textContent='Add this song to GitBuzz with the add-song-by-url skill: '+url;$('impAskMsg').textContent='';
 }
@@ -411,6 +411,10 @@ $('impRead').onclick=()=>{
   const err=$('impErr');err.textContent='';$('impPreview').hidden=true;pending=null;
   const text=$('impText').value;
   if(!text.trim()){err.textContent='Paste the song page first.';return}
+  if(/^\s*https?:\/\/\S+\s*$/.test(text)){   // a link, not a page: browsers can't fetch other sites, so explain and help
+    $('impUrl').value=text.trim();$('impText').value='';updateUrlHint();
+    err.textContent='That’s a link. GitBuzz can’t open links itself, because browsers don’t let one site read another site’s pages. Use one of the two options shown above.';
+    $('impUrlHint').scrollIntoView({behavior:'smooth',block:'center'});return}
   let res;try{res=GB.ingest.parse(text)}catch(e){err.textContent='Could not read the page: '+e.message;return}
   const st=res.stats;
   if(!st.chordLines){err.textContent='No chord lines found. Copy the whole song page, including the chords shown above the lyrics.';return}

@@ -1,0 +1,75 @@
+{
+  "plugin": "manual",
+  "ref": "hand-curated in GitBuzz",
+  "fetched": "2026-10-11",
+  "confidence": "high",
+  "fields": {
+    "key": {
+      "tonic": 9,
+      "mode": "major"
+    },
+    "missions": [
+      [
+        "Home box: F# minor shape at fret 2",
+        "The song is in A major, so you use the F# minor pentatonic box at fret 2. It has the same notes as A major pentatonic. Loop the Verse and start and end every phrase on an A (G string, fret 2)."
+      ],
+      [
+        "Land on the chord tones",
+        "With \"Follow chord\" on, land on an amber or red dot on the first beat of each chord: D, Amaj7, A, Dm."
+      ],
+      [
+        "The Dm surprise: F",
+        "Dm is borrowed from A minor, and its F is the note that makes the song bittersweet. Over Dm, play F (D string, fret 3), then fall one fret to E (fret 2) when A comes back."
+      ],
+      [
+        "Connect two boxes",
+        "Play one phrase that starts in Box 1 (fret 2) and ends in Box 2 (fret 5)."
+      ],
+      [
+        "Add color",
+        "Amaj7 already has color: its G# is the maj7. Hold G# (G string, fret 1) over Amaj7 and resolve up to A over A. Then try D add9 from the Color panel."
+      ]
+    ],
+    "guide": {
+      "targets": [
+        [
+          "D",
+          3,
+          2,
+          "A"
+        ],
+        [
+          "Amaj7",
+          4,
+          2,
+          "C#"
+        ],
+        [
+          "A",
+          4,
+          5,
+          "E"
+        ],
+        [
+          "Dm",
+          3,
+          2,
+          "A"
+        ]
+      ],
+      "special": {
+        "chordIdx": 3,
+        "note": "F",
+        "pos": [
+          2,
+          3
+        ],
+        "text": "Over Dm, play F on the D string at fret 3, one fret above the box note E. Dm is borrowed from A minor, and F is the note that gives it the sad turn. When A comes back, drop one fret to E: that half-step fall is the sound of this song."
+      },
+      "record": "Solo over the intro and the D Dm A D riff between choruses, and in the short gaps after sung lines. Keep it soft; it's a ballad."
+    },
+    "notes": [
+      "Key set to A major by hand: the intro and ending settle on A, and Amaj7 (with G#) fits A major, not D major. Dm is borrowed from A minor."
+    ]
+  }
+}
